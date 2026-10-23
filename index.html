@@ -309,6 +309,7 @@ function vRules() {
   <li>Lunas sebelum jatuh tempo tetap membayar <b>pokok + bunga ${RATE}%</b> (bunga bulan berjalan).</li>
   <li>Terlambat: denda <b>${LATE}% per hari</b> dari sisa pinjaman.</li>
   <li>Syarat: foto KTP, foto KK, selfie memegang KTP (diambil langsung dari kamera dengan waktu &amp; lokasi), dan tanda tangan perjanjian.</li>
+  <li>Rekening penerima &amp; rekening pembayaran <b>wajib atas nama peminjam sesuai KTP</b>. Setiap pembayaran wajib melampirkan bukti transfer.</li>
   <li>Satu pinjaman berjalan dalam satu waktu.</li></ul></div>`;
 }
 
@@ -383,7 +384,8 @@ function vLoanCard(l, admin) {
     ${b.next ? `<div style="margin-top:14px" class="small mute">${b.next.overdue ? 'Lewat jatuh tempo' : 'Tagihan berikutnya'} · ${tgl(b.next.d)}</div><div class="big">${rp(b.next.amt + (b.overdue ? b.denda : 0))}</div>` : ''}
     <div class="prog"><i style="width:${pct}%"></i></div>
     <div class="lines">
-      <div class="ln"><span>Dicairkan</span><b>${tgl(l.approved_at)}</b></div>
+      <div class="ln"><span>Dicairkan</span><b>${tgl(l.approved_at)}${l.files?.cair ? ` · <a href="#" data-a="img" data-id="${l.files.cair}">bukti</a>` : ''}</b></div>
+      ${l.bank?.bank_no ? `<div class="ln"><span>Ke rekening</span><b>${h(bankStr(l.bank))}</b></div>` : ''}
       <div class="ln"><span>Total kontrak (pokok + bunga ${+l.rate}%×${l.tenor})</span><b>${rp(b.contract)}</b></div>
       ${b.denda ? `<div class="ln" style="color:var(--bad)"><span>Denda keterlambatan (${b.lateDays} hari × ${+l.late_rate}%)</span><b>${rp(b.denda)}</b></div>` : ''}
       <div class="ln"><span>Sudah dibayar</span><b>${rp(b.paid)}</b></div>
@@ -405,7 +407,7 @@ function payTable(l, admin) {
   const ps = S.d.payments.filter(p => p.loan_id === l.id);
   if (!ps.length) return `<div class="small mute">Belum ada pembayaran.</div>`;
   return `<div class="tbl"><table><tr><th>Tanggal</th><th class="r">Nominal</th><th>Status</th>${admin ? '<th></th>' : ''}</tr>${ps.map(p => `<tr>
-    <td>${tgl(p.paid_on)}${p.note ? `<div class="small mute">${h(p.note)}</div>` : ''}${p.file_id ? ` <a href="#" data-a="img" data-id="${p.file_id}" class="small">bukti</a>` : ''}</td>
+    <td>${tgl(p.paid_on)}${p.file_id ? ` <a href="#" data-a="img" data-id="${p.file_id}" class="small">bukti</a>` : ''}${p.from_bank ? `<div class="small mute">dari ${h(p.from_bank)}</div>` : ''}${p.note ? `<div class="small mute">${h(p.note)}</div>` : ''}</td>
     <td class="r">${rp(p.amount)}</td><td><span class="pill ${p.status === 'ok' ? 'paid' : p.status === 'pending' ? 'pending' : 'rejected'}">${{ ok: 'Diterima', pending: 'Dicek', rejected: 'Ditolak' }[p.status]}</span></td>
     ${admin ? `<td class="r" style="white-space:nowrap">${p.status !== 'ok' ? `<button class="btn sm ok" data-a="payok" data-id="${p.id}">Terima</button> ` : ''}${p.status === 'pending' ? `<button class="btn sm" data-a="payno" data-id="${p.id}">Tolak</button> ` : ''}<button class="btn sm bad" data-a="paydel" data-id="${p.id}">Hapus</button></td>` : ''}</tr>`).join('')}</table></div>`;
 }
@@ -416,12 +418,32 @@ function vHist() {
     <div class="av">${l.no}</div><div class="grow"><b>${rp(l.amount)} · ${l.tenor} bln</b><div class="small mute">Diajukan ${tgl(l.applied_at)}${l.paid_at ? ' · lunas ' + tgl(l.paid_at) : ''}</div></div>${statusPill(l, b)}</div>`; }).join('')}</div>`;
 }
 const FIELDS = [['full_name', 'Nama lengkap (sesuai KTP)'], ['address', 'Alamat (sesuai KTP)'], ['birth_place', 'Tempat lahir'], ['birth_date', 'Tanggal lahir'], ['spouse_name', 'Nama istri / suami'], ['mother_name', 'Nama ibu kandung'], ['phone', 'Nomor telepon']];
+const BANK_F = [['bank_name', 'Bank'], ['bank_no', 'Nomor rekening'], ['bank_holder', 'Atas nama rekening']];
+const BANKS = ['BCA', 'BRI', 'BNI', 'Mandiri', 'BSI', 'BTN', 'CIMB Niaga', 'Permata', 'Danamon', 'OCBC', 'Maybank', 'Panin', 'Bank Jago', 'SeaBank', 'blu by BCA Digital', 'Bank Neo Commerce', 'BPD (Bank Daerah)'];
+// nama dibandingkan tanpa beda huruf besar/kecil, tanda baca, dan spasi ganda — sama dengan md_norm_name di server
+const normName = s => String(s || '').toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/ +/g, ' ').trim();
+const nameOk = (holder, ktp) => !!normName(ktp) && normName(holder) === normName(ktp);
+const bankOk = u => !!(u && u.bank_no && nameOk(u.bank_holder, u.full_name));
+const bankStr = b => b && b.bank_no ? `${b.bank_name} ${b.bank_no} a.n. ${b.bank_holder}` : '-';
+function bankForm(me, then = '') {
+  const bn = me.bank_name || '', other = bn && !BANKS.includes(bn);
+  return `<form data-f="bank" data-then="${then}" id="bankf">
+    <div class="f2"><label class="f"><span>Bank</span><select class="i" name="bank_name" required><option value="">Pilih bank…</option>${BANKS.map(b => `<option ${b === bn ? 'selected' : ''}>${b}</option>`).join('')}<option value="__lain" ${other ? 'selected' : ''}>Lainnya…</option></select></label>
+    <label class="f"><span>Nomor rekening</span><input class="i" name="bank_no" inputmode="numeric" required value="${h(me.bank_no || '')}" placeholder="hanya angka"></label></div>
+    <label class="f" id="bank-other" style="${other ? '' : 'display:none'}"><span>Nama bank</span><input class="i" name="bank_other" value="${other ? h(bn) : ''}"></label>
+    <label class="f"><span>Nama pemilik rekening</span><input class="i" name="bank_holder" id="bank-holder" required value="${h(me.bank_holder || me.full_name || '')}" autocomplete="off"></label>
+    <div class="small" id="bank-match" style="margin:-4px 0 10px">${holderNote(me.bank_holder || me.full_name, me.full_name)}</div>
+    <div class="note" style="margin-bottom:10px">Rekening harus <b>atas nama Anda sendiri, sama dengan nama di KTP</b> (${h(me.full_name)}). Dana hanya dicairkan ke rekening ini dan pembayaran harus ditransfer dari rekening ini.</div>
+    <div class="err"></div>${then === 'wiz' ? '' : `<button class="btn pri">Simpan rekening</button>`}</form>`;
+}
+const holderNote = (v, ktp) => nameOk(v, ktp) ? `<span style="color:var(--ok)">✓ Sesuai nama KTP</span>` : `<span style="color:var(--bad)">✗ Harus sama dengan nama KTP: ${h(ktp)}</span>`;
 function vProfile() {
   const me = S.d.me;
   return `<div class="grid g2"><div class="card glass"><h2>Data diri</h2><div class="lines">
     <div class="ln"><span>Username</span><b>${h(me.username)}</b></div>
     ${FIELDS.map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(k === 'birth_date' ? tgl(me[k]) : me[k] || '-')}</b></div>`).join('')}</div>
     <div class="small mute">Perubahan data diri dilakukan oleh admin.</div></div>
+    <div class="card glass"><h2>Rekening Anda</h2>${bankOk(me) ? `<div class="note" style="margin-bottom:12px">Terdaftar: <b>${h(bankStr(me))}</b></div>` : ''}${bankForm(me)}</div>
     <div class="card glass"><h2>Ganti password</h2><form data-f="pass"><label class="f"><span>Password lama</span><input class="i" type="password" name="old" required autocomplete="current-password"></label>
     <label class="f"><span>Password baru</span><input class="i" type="password" name="new" minlength="6" required autocomplete="new-password"></label><div class="err"></div>
     <button class="btn pri">Simpan</button></form>
@@ -526,7 +548,7 @@ function startApply() {
   wizard();
 }
 function wizard() {
-  const st = W.step, N = 5;
+  const st = W.step, N = 6;
   let body = '';
   if (st === 0) {
     const p = plan(W.amt, W.n);
@@ -535,8 +557,10 @@ function wizard() {
     <div class="scale"><span>${rp(100000)}</span><span>Maks ${rp(S.d.limit)}</span></div>
     <div class="seg" style="margin:14px 0">${[1, 2, 3].map(n => `<button data-a="wten" data-v="${n}" class="${W.n === n ? 'on' : ''}">${n} bulan</button>`).join('')}</div>
     <div class="lines" id="w-lines">${calcLines(p)}</div>`;
-  } else if (st <= 3) {
-    const [k, t, d] = DOCS[st - 1], s = W.shots[k];
+  } else if (st === 1) {
+    body = `<h3>Rekening penerima dana</h3><p class="mute small">Dana pinjaman ditransfer ke rekening ini. Cicilan juga wajib dibayar dari rekening yang sama.</p>${bankForm(S.d.me, 'wiz')}`;
+  } else if (st <= 4) {
+    const [k, t, d] = DOCS[st - 2], s = W.shots[k];
     body = `<h3>${t}</h3><p class="mute small">${d}</p><div class="shot">${s ? `<img src="${s.data}" alt="">` : `<div class="ph"><b>${k === 'selfie' ? '🤳' : '🪪'}</b>Belum ada foto</div>`}</div>
     <div class="row" style="margin-top:12px"><button class="btn ${s ? '' : 'pri'}" data-a="cam" data-k="${k}">${s ? 'Ambil ulang' : 'Buka kamera'}</button>
     ${k !== 'selfie' ? `<label class="btn sm" style="opacity:.8">Unggah file<input type="file" accept="image/*" capture="environment" data-k="${k}" hidden></label>` : ''}</div>
@@ -548,12 +572,12 @@ function wizard() {
     <label class="chk"><input type="checkbox" id="agree" ${W.agree ? 'checked' : ''}><span>Saya telah membaca, memahami, dan menyetujui seluruh isi perjanjian ini. Data dan dokumen yang saya berikan benar.</span></label>
     <div class="err" id="w-err"></div>`;
   }
-  const can = st === 0 || (st <= 3 ? !!W.shots[DOCS[st - 1][0]] : true);
+  const can = st <= 1 || (st <= 4 ? !!W.shots[DOCS[st - 2][0]] : true);
   modal(`${mh('Ajukan pinjaman')}<div class="steps">${Array.from({ length: N }, (_, i) => `<i class="${i <= st ? 'on' : ''}"></i>`).join('')}</div>${body}
     <div class="row" style="margin-top:18px;justify-content:space-between">${st ? '<button class="btn" data-a="wback">Kembali</button>' : '<span></span>'}
-    ${st < 4 ? `<button class="btn pri" data-a="wnext" ${can ? '' : 'disabled'}>Lanjut</button>` : `<button class="btn pri" data-a="wsend" id="w-send">Setujui &amp; kirim</button>`}</div>`, 'wide');
+    ${st === 1 ? `<button class="btn pri" data-a="wbank">Simpan &amp; lanjut</button>` : st < 5 ? `<button class="btn pri" data-a="wnext" ${can ? '' : 'disabled'}>Lanjut</button>` : `<button class="btn pri" data-a="wsend" id="w-send">Setujui &amp; kirim</button>`}</div>`, 'wide');
   paintRanges();
-  if (st === 4) initSig();
+  if (st === 5) initSig();
 }
 function agreementText() {
   const me = S.d.me, s = S.d.settings || {}, p = plan(W.amt, W.n), now = new Date();
@@ -571,6 +595,7 @@ Alamat            : ${me.address}
 Nama istri/suami  : ${me.spouse_name || '-'}
 Nama ibu kandung  : ${me.mother_name}
 Nomor telepon     : ${me.phone}
+Rekening          : ${bankStr(me)}
 
 Kedua pihak sepakat atas ketentuan berikut:
 
@@ -592,7 +617,10 @@ Setelah pinjaman ini lunas, PIHAK KEDUA dapat mengajukan pinjaman berikutnya hin
 Pasal 6 — Data dan Dokumen
 PIHAK KEDUA menyerahkan foto KTP, foto Kartu Keluarga, dan foto selfie memegang KTP yang diambil langsung dengan waktu dan lokasi, serta menyatakan seluruh data adalah benar. Dokumen hanya digunakan untuk keperluan perjanjian ini.
 
-Pasal 7 — Penyelesaian
+Pasal 7 — Rekening dan Bukti Transfer
+Dana pinjaman hanya dicairkan ke rekening ${bankStr(me)}, yaitu rekening atas nama PIHAK KEDUA yang sesuai dengan KTP. Setiap pembayaran wajib ditransfer dari rekening atas nama PIHAK KEDUA tersebut dan disertai bukti transfer. Pembayaran dari rekening atas nama orang lain dapat ditolak.
+
+Pasal 8 — Penyelesaian
 Perselisihan diselesaikan secara musyawarah dan kekeluargaan terlebih dahulu.
 
 Perjanjian ini disetujui secara elektronik oleh PIHAK KEDUA dengan tanda tangan digital.`;
@@ -722,10 +750,11 @@ function fillThumbs() {
   document.querySelectorAll('[data-thumb]').forEach(async el => { try { el.querySelector('img').src = await loadImg(el.dataset.thumb); } catch {} });
 }
 function thumbs(l) {
-  const lab = { ktp: 'KTP', kk: 'KK', selfie: 'Selfie + KTP', sign: 'Tanda tangan' };
-  return `<div class="thumbs">${['ktp', 'kk', 'selfie', 'sign'].filter(k => l.files[k]).map(k => { const f = fileById(l.files[k]);
+  const lab = { ktp: 'KTP', kk: 'KK', selfie: 'Selfie + KTP', sign: 'Tanda tangan', cair: 'Bukti pencairan' };
+  return `<div class="thumbs">${['ktp', 'kk', 'selfie', 'sign', 'cair'].filter(k => l.files[k]).map(k => { const f = fileById(l.files[k]);
     return `<div><div class="th" data-a="img" data-id="${l.files[k]}" data-thumb="${l.files[k]}"><img alt=""><span>${lab[k]}</span></div>
-    ${f && f.meta && k !== 'sign' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source && f.meta.source !== 'camera' ? ' · ⚠️ ' + h(f.meta.source) : ' · kamera'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.meta.lat},${f.meta.lng}">📍 peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
+    ${f && f.meta && k === 'cair' ? `<div class="small mute" style="margin-top:4px">diunggah ${wkt(f.meta.at || f.created_at)}</div>` : ''}
+    ${f && f.meta && k !== 'sign' && k !== 'cair' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source && f.meta.source !== 'camera' ? ' · ⚠️ ' + h(f.meta.source) : ' · kamera'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.meta.lat},${f.meta.lng}">📍 peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
 }
 function viewLoan(id) {
   const draw = () => {
@@ -744,12 +773,13 @@ function aLoan(id) {
     const l = S.d.loans.find(x => x.id === +id); if (!l) return closeModal();
     const u = userById(l.user_id) || {}, b = l.approved_at ? bill(l, S.d.payments) : null;
     modal(`${mh(`${h(u.full_name || 'Akun terhapus')} · ke-${l.no}`)}<div class="row" style="margin-bottom:14px">${statusPill(l, b)}<span class="small mute">@${h(u.username)} · ${h(u.phone)} · diajukan ${wkt(l.applied_at)}</span></div>
-      ${l.status === 'pending' ? `<div class="note warn" style="margin-bottom:14px">Periksa dokumen di bawah, lalu setujui saat dana dicairkan.</div><div class="row" style="margin-bottom:16px"><button class="btn ok" data-a="approve" data-id="${l.id}">Setujui &amp; cairkan hari ini</button><button class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div>` : ''}
+      ${rekBox(l, u)}
+      ${l.status === 'pending' ? `<div class="note warn" style="margin-bottom:14px">Periksa dokumen di bawah, transfer dana ke rekening di atas, lalu unggah bukti transfer saat menyetujui.</div><div class="row" style="margin-bottom:16px"><button class="btn ok" data-a="approve" data-id="${l.id}">Setujui &amp; cairkan hari ini</button><button class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div>` : ''}
       ${l.status === 'active' ? vLoanCard(l, true) + `<form data-f="payadd" data-id="${l.id}" class="row" style="margin-top:12px"><input class="i" name="amount" inputmode="numeric" placeholder="Catat pembayaran (Rp)" style="max-width:220px" value="${b ? b.payoff : ''}"><input class="i" type="date" name="paid_on" value="${new Date().toISOString().slice(0, 10)}" style="max-width:170px"><button class="btn pri">Catat bayar</button>${b && b.payoff <= 0 ? `<button type="button" class="btn ok" data-a="markpaid" data-id="${l.id}">Tandai lunas</button>` : ''}</form>` : ''}
       ${l.status !== 'active' && l.approved_at ? `<h3 style="margin-top:16px">Pembayaran</h3>${payTable(l, true)}` : ''}
       <h3 style="margin-top:18px">Dokumen</h3>${thumbs(l)}
       ${l.geo?.lat != null ? `<div class="small mute" style="margin-top:8px">Lokasi selfie: ${h(l.geo.addr || '')} (${(+l.geo.lat).toFixed(5)}, ${(+l.geo.lng).toFixed(5)})</div>` : ''}
-      <h3 style="margin-top:18px">Data peminjam</h3><div class="lines">${FIELDS.map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(k === 'birth_date' ? tgl(u[k]) : u[k] || '-')}</b></div>`).join('')}</div>
+      <h3 style="margin-top:18px">Data peminjam</h3><div class="lines">${FIELDS.concat(BANK_F).map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(k === 'birth_date' ? tgl(u[k]) : u[k] || '-')}</b></div>`).join('')}</div>
       <h3 style="margin-top:18px">Ubah pinjaman</h3><form data-f="loanedit" data-id="${l.id}"><div class="f2">
         <label class="f"><span>Pokok (Rp)</span><input class="i" name="amount" inputmode="numeric" value="${l.amount}"></label>
         <label class="f"><span>Tenor (bulan)</span><select class="i" name="tenor">${[1, 2, 3, 4, 5, 6].map(n => `<option ${+l.tenor === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
@@ -764,12 +794,30 @@ function aLoan(id) {
   };
   draw();
 }
+// rekening tujuan pencairan: salinan saat pengajuan, atau rekening akun untuk pengajuan lama
+const loanBank = (l, u) => l.bank?.bank_no ? l.bank : u || {};
+function rekBox(l, u) {
+  const b = loanBank(l, u), ok = b.bank_no && nameOk(b.bank_holder, u.full_name);
+  return `<div class="note ${ok ? '' : 'bad'}" style="margin-bottom:14px">Rekening peminjam: <b>${h(bankStr(b))}</b>${b.bank_no ? (ok ? ' · ✓ sesuai nama KTP' : ` · ✗ tidak sama dengan nama KTP (${h(u.full_name)})`) : ' — belum diisi'}</div>`;
+}
+function cairModal(id) {
+  const l = S.d.loans.find(x => x.id === +id), u = userById(l.user_id) || {}, b = loanBank(l, u), ok = b.bank_no && nameOk(b.bank_holder, u.full_name);
+  modal(`${mh('Setujui &amp; cairkan')}<div class="lines"><div class="ln"><span>Peminjam (nama KTP)</span><b>${h(u.full_name)}</b></div>
+    <div class="ln"><span>Nominal ditransfer</span><b>${rp(l.amount)}</b></div><div class="ln"><span>Ke rekening</span><b>${h(bankStr(b))}</b></div></div>
+    ${ok ? `<div class="note" style="margin:10px 0">✓ Nama pemilik rekening sama dengan nama KTP. Transfer hanya ke rekening ini.</div>`
+      : `<div class="note bad" style="margin:10px 0">Rekening ${b.bank_no ? 'tidak atas nama peminjam sesuai KTP' : 'belum diisi'}. Pencairan tidak bisa dilakukan — minta peminjam memperbaiki rekening (atau ubah di data peminjam).</div>`}
+    <form data-f="cair" data-id="${l.id}"><label class="f"><span>Bukti transfer pencairan</span><input class="i" type="file" accept="image/*" id="cair-file" data-prev="cair-prev" required ${ok ? '' : 'disabled'}></label>
+    <div class="shot" id="cair-prev" style="display:none;margin-bottom:12px"></div>
+    <label class="f"><span>Tanggal cair</span><input class="i" type="date" name="approved_at" value="${new Date().toISOString().slice(0, 10)}" ${ok ? '' : 'disabled'}></label>
+    <div class="err"></div><button class="btn ok wide" ${ok ? '' : 'disabled'}>Setujui &amp; simpan bukti</button></form>`);
+}
 function aUser(id) {
   const draw = () => {
     const u = S.d.users.find(x => x.id === +id); if (!u) return closeModal();
     const ls = S.d.loans.filter(l => l.user_id === u.id);
     modal(`${mh(h(u.full_name))}<div class="small mute" style="margin-bottom:14px">@${h(u.username)} · daftar ${tgl(u.created_at)} · login terakhir ${u.last_login ? wkt(u.last_login) : '-'}</div>
-      <form data-f="useredit" data-id="${u.id}">${FIELDS.map(([k, v]) => `<label class="f"><span>${v}</span>${k === 'address' ? `<textarea class="i" name="${k}" rows="2">${h(u[k] || '')}</textarea>` : `<input class="i" name="${k}" ${k === 'birth_date' ? 'type="date"' : ''} value="${h(u[k] || '')}">`}</label>`).join('')}
+      ${u.bank_no && !bankOk(u) ? `<div class="note bad" style="margin-bottom:12px">Nama rekening (${h(u.bank_holder)}) tidak sama dengan nama KTP (${h(u.full_name)}).</div>` : ''}
+      <form data-f="useredit" data-id="${u.id}">${FIELDS.concat(BANK_F).map(([k, v]) => `<label class="f"><span>${v}</span>${k === 'address' ? `<textarea class="i" name="${k}" rows="2">${h(u[k] || '')}</textarea>` : `<input class="i" name="${k}" ${k === 'birth_date' ? 'type="date"' : ''} value="${h(u[k] || '')}">`}</label>`).join('')}
       <div class="f2"><label class="f"><span>Batas pinjaman manual (kosong = otomatis ${rp(u.limit)})</span><input class="i" name="limit_override" inputmode="numeric" value="${u.limit_override ?? ''}"></label>
       <label class="f"><span>Status akun</span><select class="i" name="active"><option value="true" ${u.active ? 'selected' : ''}>Aktif</option><option value="false" ${u.active ? '' : 'selected'}>Nonaktif</option></select></label></div>
       <button class="btn pri">Simpan</button></form>
@@ -792,14 +840,17 @@ async function printLoan(id) {
   w.document.close();
 }
 function payModal(id) {
-  const l = S.d.loans.find(x => x.id === +id), b = bill(l, S.d.payments);
-  W.bukti = null;
-  modal(`${mh('Konfirmasi pembayaran')}<p class="mute small">Setelah transfer, isi nominal dan lampirkan bukti. Admin akan memeriksa.</p>${payInfo()}
+  const l = S.d.loans.find(x => x.id === +id), b = bill(l, S.d.payments), me = S.d.me;
+  if (!bankOk(me)) return modal(`${mh('Konfirmasi pembayaran')}<div class="note warn" style="margin-bottom:12px">Sebelum mengirim bukti transfer, daftarkan rekening Anda. Pembayaran harus dari rekening atas nama Anda sesuai KTP.</div>${bankForm(me, 'pay:' + l.id)}`);
+  modal(`${mh('Konfirmasi pembayaran')}<p class="mute small">Transfer dari rekening Anda, lalu unggah foto/screenshot bukti transfer. Admin akan memeriksa.</p>${payInfo()}
+    <div class="note" style="margin-top:10px">Dari rekening: <b>${h(bankStr(me))}</b><div class="small mute">Transfer dari rekening atas nama orang lain dapat ditolak. Ganti rekening di menu Profil.</div></div>
     <form data-f="pay" data-id="${l.id}" style="margin-top:12px"><label class="f"><span>Nominal (Rp)</span><input class="i" name="amount" inputmode="numeric" required value="${b.next ? Math.min(b.payoff, b.next.amt + (b.overdue ? b.denda : 0)) : b.payoff}"></label>
     <div class="small mute" style="margin:-6px 0 10px">Pelunasan hari ini: ${rp(b.payoff)}</div>
-    <label class="f"><span>Bukti transfer (opsional)</span><input class="i" type="file" accept="image/*" id="bukti"></label>
-    <label class="f"><span>Catatan</span><input class="i" name="note" placeholder="mis. transfer BCA"></label><div class="err"></div>
-    <button class="btn pri wide">Kirim konfirmasi</button></form>`);
+    <label class="f"><span>Bukti transfer (wajib)</span><input class="i" type="file" accept="image/*" id="bukti" data-prev="bukti-prev" required></label>
+    <div class="shot" id="bukti-prev" style="display:none;margin-bottom:12px"></div>
+    <label class="f"><span>Catatan</span><input class="i" name="note" placeholder="opsional"></label>
+    <label class="chk"><input type="checkbox" name="own" required><span>Saya mentransfer dari rekening atas nama saya sendiri (${h(me.full_name)}).</span></label><div class="err"></div>
+    <button class="btn pri wide">Kirim bukti &amp; konfirmasi</button></form>`);
 }
 async function imgToData(f, max = 1400) {
   const img = new Image(); img.src = URL.createObjectURL(f); await img.decode();
@@ -857,7 +908,8 @@ document.addEventListener('click', async e => {
     case 'print': printLoan(id); break;
     case 'aloan': aLoan(id); break;
     case 'auser': aUser(id); break;
-    case 'approve': if (await ask('Setujui pinjaman ini? Tanggal cair = hari ini.')) adm('loan_update', { id, status: 'active' }, 'Pinjaman disetujui'); break;
+    case 'approve': cairModal(id); break;
+    case 'wbank': $('#bankf')?.requestSubmit(); break;
     case 'reject': if (await ask('Tolak pengajuan ini?')) adm('loan_update', { id, status: 'rejected' }, 'Pengajuan ditolak'); break;
     case 'markpaid': adm('loan_update', { id, status: 'paid' }, 'Ditandai lunas'); break;
     case 'loandel': if (await ask('Hapus pinjaman ini beserta dokumen dan pembayarannya? Tidak bisa dibatalkan.')) { await adm('loan_delete', { id }, 'Pinjaman dihapus'); closeModal(); } break;
@@ -879,8 +931,15 @@ document.addEventListener('input', e => {
   if (t.id === 'r-wamt') { W.amt = +t.value; $('#w-amt').textContent = rp(W.amt); $('#w-lines').innerHTML = calcLines(plan(W.amt, W.n)); paintRanges(); }
   if (t.id === 'q') { S.q = t.value; clearTimeout(S.qt); S.qt = setTimeout(() => { const pos = t.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); }, 250); }
   if (t.id === 'agree') W.agree = t.checked;
+  if (t.id === 'bank-holder') $('#bank-match').innerHTML = holderNote(t.value, S.d.me.full_name);
 });
-document.addEventListener('change', e => { if (e.target.matches('input[type=file][data-k]')) fileShot(e.target); });
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.matches('input[type=file][data-k]')) fileShot(t);
+  if (t.name === 'bank_name' && t.form?.id === 'bankf') $('#bank-other').style.display = t.value === '__lain' ? '' : 'none';
+  if (t.dataset.prev) { const p = document.getElementById(t.dataset.prev), f = t.files[0];
+    p.style.display = f ? '' : 'none'; p.innerHTML = f ? `<img src="${URL.createObjectURL(f)}" alt="Pratinjau bukti transfer" style="object-fit:contain">` : ''; }
+});
 document.addEventListener('submit', async e => {
   const f = e.target; if (!f.dataset.f) return; e.preventDefault();
   const fd = Object.fromEntries(new FormData(f)), err = f.querySelector('.err'), btn = f.querySelector('button:not([type=button])');
@@ -896,10 +955,36 @@ document.addEventListener('submit', async e => {
       case 'pass': { const r = await rpc('md_pass', { p_token: S.token, p_old: fd.old, p_new: fd.new }); if (!r.ok) return fail(r.err); f.reset(); toast('Password diganti'); break; }
       case 'set': await adm('settings', fd, 'Pengaturan disimpan'); break;
       case 'pay': {
-        let fid = null; const file = $('#bukti').files[0];
-        if (file) { const up = await rpc('md_file_put', { p_token: S.token, p_kind: 'bukti', p_data: await imgToData(file), p_meta: { at: new Date().toISOString(), name: file.name } }); if (!up.ok) return fail(up.err); fid = up.id; }
-        const r = await rpc('md_pay', { p_token: S.token, p_loan: +f.dataset.id, p_amount: num(fd.amount), p_file: fid, p_note: fd.note });
-        if (!r.ok) return fail(r.err); closeModal(); toast('Konfirmasi terkirim'); refresh(true); break;
+        const file = $('#bukti').files[0];
+        if (!file) return fail('Lampirkan foto bukti transfer');
+        if (!fd.own) return fail('Centang pernyataan rekening atas nama sendiri');
+        const up = await rpc('md_file_put', { p_token: S.token, p_kind: 'bukti', p_data: await imgToData(file), p_meta: { at: new Date().toISOString(), name: file.name, from: bankStr(S.d.me) } });
+        if (!up.ok) return fail(up.err);
+        const r = await rpc('md_pay', { p_token: S.token, p_loan: +f.dataset.id, p_amount: num(fd.amount), p_file: up.id, p_note: fd.note });
+        if (!r.ok) return fail(r.err); closeModal(); toast('Bukti transfer terkirim'); refresh(true); break;
+      }
+      case 'bank': {
+        const p = { bank_name: fd.bank_name === '__lain' ? (fd.bank_other || '').trim() : fd.bank_name, bank_no: fd.bank_no, bank_holder: fd.bank_holder };
+        if (!p.bank_name) return fail('Pilih / isi nama bank');
+        if (!/^\d{6,20}$/.test(String(p.bank_no).replace(/\D/g, ''))) return fail('Nomor rekening 6–20 angka');
+        if (!nameOk(p.bank_holder, S.d.me.full_name)) return fail('Nama pemilik rekening harus sama dengan nama KTP: ' + S.d.me.full_name);
+        const r = await rpc('md_set_bank', { p_token: S.token, p });
+        if (!r.ok) return fail(r.err);
+        await refresh(true);
+        const then = f.dataset.then;
+        if (then === 'wiz') { W.step++; wizard(); } else if (then.startsWith('pay:')) payModal(then.slice(4)); else toast('Rekening disimpan');
+        break;
+      }
+      case 'cair': {
+        const file = $('#cair-file').files[0];
+        if (!file) return fail('Lampirkan bukti transfer pencairan');
+        const l = S.d.loans.find(x => x.id === +f.dataset.id), u = userById(l.user_id) || {}, b = loanBank(l, u);
+        const up = await rpc('md_file_put', { p_token: S.token, p_kind: 'cair', p_data: await imgToData(file), p_meta: { at: new Date().toISOString(), name: file.name, to: bankStr(b) } });
+        if (!up.ok) return fail(up.err);
+        const p = { id: l.id, status: 'active', cair_file: up.id, approved_at: new Date((fd.approved_at || new Date().toISOString().slice(0, 10)) + 'T08:00').toISOString() };
+        if (!l.bank?.bank_no) p.bank = { bank_name: b.bank_name, bank_no: b.bank_no, bank_holder: b.bank_holder };
+        if (await adm('loan_update', p, 'Pinjaman disetujui & bukti pencairan disimpan')) aLoan(l.id);
+        break;
       }
       case 'payadd': { if (!num(fd.amount)) return fail('Isi nominal'); await adm('pay_add', { loan_id: +f.dataset.id, amount: num(fd.amount), paid_on: fd.paid_on }, 'Pembayaran dicatat'); autoPaid(+f.dataset.id); break; }
       case 'loanedit': await adm('loan_update', { id: f.dataset.id, amount: num(fd.amount), tenor: +fd.tenor, rate: +String(fd.rate).replace(',', '.'), late_rate: +String(fd.late_rate).replace(',', '.'), status: fd.status, approved_at: fd.approved_at ? new Date(fd.approved_at + 'T08:00').toISOString() : '', note: fd.note }, 'Pinjaman diperbarui'); break;
