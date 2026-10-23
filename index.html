@@ -157,6 +157,10 @@ input.i:focus,select.i:focus,textarea.i:focus{border-color:var(--acc);box-shadow
 @media (max-width:600px){.thumbs{grid-template-columns:repeat(2,1fr)}}
 .th{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--edge);aspect-ratio:1;cursor:zoom-in;position:relative}
 .th img{width:100%;height:100%;object-fit:cover}
+.badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--bad);color:#fff;font-size:12px;font-weight:800;vertical-align:middle}.badge.z{background:var(--edge);color:var(--mute)}
+.todo{padding:14px 16px;border-radius:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px}.chip.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.chip.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.stages div{padding:10px;border-radius:14px;background:var(--edge);font-size:12.5px;color:var(--mute)}.stages div.on{color:var(--ok);font-weight:700}.stages div.now{outline:2px solid var(--ok);color:inherit;font-weight:700}
 .rek{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--edge);margin-top:8px}
 .rek>div{flex:1;min-width:0}.rek b.mono{font:700 18px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5px}
 label.rek{cursor:pointer}label.rek input{width:18px;height:18px;flex:none}
@@ -254,7 +258,7 @@ function bill(l, pays, now = Date.now()) {
 }
 
 // ---------- state ----------
-const S = { token: LS.get('token'), d: null, rev: 0, tab: LS.get('tab') || 'home', atab: LS.get('atab') || 'sum', calc: { amt: BASE, n: 1, lvl: 1, late: 0 }, lfilter: 'all', q: '', dirty: false };
+const S = { token: LS.get('token'), d: null, rev: 0, tab: LS.get('tab') || 'home', atab: LS.get('atab') || 'todo', calc: { amt: BASE, n: 1, lvl: 1, late: 0 }, lfilter: 'all', q: '', dirty: false };
 const isAdmin = () => S.d?.me?.role === 'admin';
 const myLoans = () => (S.d?.loans || []).filter(l => l.user_id === S.d.me.id);
 const openLoan = () => myLoans().find(l => l.status === 'pending' || l.status === 'active');
@@ -268,9 +272,21 @@ async function refresh(force) {
     if (!r.ok) { if (r.err === 'auth') { logout(true); toast('Sesi berakhir, silakan masuk lagi'); } return; }
     if (r.same) return;
     S.d = r; S.rev = r.rev;
+    if (isAdmin()) adminAlert();
     if (busy()) S.dirty = true; else render();
     if ($('#modal').firstChild && M.refresh) M.refresh();
   } catch (e) { console.warn(e); }
+}
+// admin: jumlah tugas di judul tab + pemberitahuan saat ada pengajuan / bukti bayar baru
+function adminAlert() {
+  const t = todo(), n = t.total, ids = new Set([...t.verif.map(l => 'l' + l.id), ...t.kirim.map(l => 'k' + l.id), ...t.bayar.map(p => 'p' + p.id)]);
+  document.title = n ? `(${n}) Modalin` : 'Modalin';
+  const fresh = S.seen ? [...ids].filter(i => !S.seen.has(i) && i[0] !== 'k') : [];
+  S.seen = ids;
+  if (!fresh.length) return;
+  const msg = `${fresh.filter(i => i[0] === 'l').length ? fresh.filter(i => i[0] === 'l').length + ' pengajuan baru' : ''}${fresh.some(i => i[0] === 'l') && fresh.some(i => i[0] === 'p') ? ' · ' : ''}${fresh.filter(i => i[0] === 'p').length ? fresh.filter(i => i[0] === 'p').length + ' bukti pengembalian' : ''} perlu ditindaklanjuti`;
+  toast('🔔 ' + msg, 5000);
+  try { if (window.Notification && Notification.permission === 'granted') new Notification('Modalin', { body: msg }); } catch {}
 }
 const busy = () => { const a = document.activeElement; return a && $('#app').contains(a) && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && a.type !== 'range'; };
 document.addEventListener('focusout', () => setTimeout(() => { if (S.dirty && !busy()) { S.dirty = false; render(); } }, 50));
@@ -278,6 +294,7 @@ setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 50
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && refresh());
 
 function logout(silent) {
+  document.title = 'Modalin'; S.seen = null;
   if (!silent && S.token) rpc('md_logout', { p_token: S.token }).catch(() => {});
   S.token = null; S.d = null; S.rev = 0; LS.set('token', null); closeModal(); render();
 }
@@ -378,7 +395,8 @@ function vUserHome() {
   if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="mute">Siapkan KTP dan KK asli. Foto diambil langsung dari kamera, dengan waktu dan lokasi otomatis.</p>
     <button class="btn pri wide" data-a="apply">Ajukan pinjaman</button></div>${vRules()}</div>`;
   if (l.status === 'pending') return hi + `<div class="card glass"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Pengajuan ${rp(l.amount)}</h2>${statusPill(l)}</div>
-    <p class="mute">Diajukan ${wkt(l.applied_at)} · tenor ${l.tenor} bulan. Kami akan memeriksa dokumen dan mencairkan dana setelah disetujui.</p>
+    <div class="stages"><div class="on">✓ Diajukan<br><span class="small">${wkt(l.applied_at)}</span></div><div class="${l.verified_at ? 'on' : 'now'}">${l.verified_at ? '✓ Diverifikasi admin' : '⏳ Menunggu verifikasi admin'}</div><div class="${l.verified_at ? 'now' : ''}">${l.verified_at ? '⏳ Menunggu pengiriman modal' : 'Pengiriman modal'}</div></div>
+    <p class="mute">Tenor ${l.tenor} bulan · dana ditransfer ke ${h(bankStr(l.bank))}. Bukti transfer akan muncul di sini setelah modal dikirim.</p>
     <div class="row"><button class="btn sm" data-a="viewloan" data-id="${l.id}">Lihat detail</button><button class="btn sm bad" data-a="cancel" data-id="${l.id}">Batalkan pengajuan</button></div></div>`;
   return hi + vLoanCard(l);
 }
@@ -554,9 +572,57 @@ function vProfile() {
 
 // ---------- admin ----------
 function vAdmin() {
-  const tabs = [['sum', 'Ringkasan'], ['loans', 'Pinjaman'], ['users', 'Peminjam'], ['log', 'Aktivitas'], ['set', 'Pengaturan']];
+  const n = todo().total;
+  const tabs = [['todo', `Tindak lanjut${n ? ` <span class="badge">${n}</span>` : ''}`], ['sum', 'Ringkasan'], ['loans', 'Pinjaman'], ['users', 'Peminjam'], ['log', 'Aktivitas'], ['set', 'Pengaturan']];
   const nav = `<nav class="tabs glass">${tabs.map(([k, v]) => `<button data-a="atab" data-v="${k}" class="${S.atab === k ? 'on' : ''}">${v}</button>`).join('')}</nav>`;
-  return nav + ({ sum: vASum, loans: vALoans, users: vAUsers, log: vALog, set: vASet }[S.atab] || vASum)();
+  return nav + ({ todo: vATodo, sum: vASum, loans: vALoans, users: vAUsers, log: vALog, set: vASet }[S.atab] || vATodo)();
+}
+// ---------- antrean tindak lanjut admin: verifikasi → kirim modal → verifikasi pengembalian ----------
+function todo() {
+  const L = S.d?.loans || [], P = S.d?.payments || [];
+  const verif = L.filter(l => l.status === 'pending' && !l.verified_at), kirim = L.filter(l => l.status === 'pending' && l.verified_at);
+  const bayar = P.filter(p => p.status === 'pending');
+  const late = L.filter(l => l.status === 'active' && bill(l, P).overdue);
+  const baru = (S.d?.users || []).filter(u => !L.some(l => l.user_id === u.id) && Date.now() - new Date(u.created_at) < 7 * 864e5);
+  return { verif, kirim, bayar, late, baru, total: verif.length + kirim.length + bayar.length };
+}
+// pemeriksaan otomatis yang bisa dihitung dari data; foto tetap dicocokkan admin dengan mata
+function autoChecks(l, u) {
+  const b = loanBank(l, u), docs = ['ktp', 'kk', 'selfie'].map(k => fileById(l.files?.[k])).filter(Boolean);
+  return [['NIK cocok tanggal lahir', !V.nik(u.nik, u.birth_date)], ['Nomor KK valid', !V.kk(u.kk_no)],
+    ['Rekening a.n. sesuai KTP', !!(b.bank_no && nameOk(b.bank_holder, u.full_name))], ['Nomor rekening wajar', !!b.bank_no && !V.bankNo(b.bank_name, b.bank_no)],
+    ['3 foto kamera + lokasi', docs.length === 3 && docs.every(f => f.meta && f.meta.lat != null && f.meta.source !== 'file-lama')], ['Tanda tangan ada', !!l.files?.sign]];
+}
+const chips = cs => `<div class="chips">${cs.map(([t, ok]) => `<span class="chip ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'} ${t}</span>`).join('')}</div>`;
+function todoLoan(l, stage) {
+  const u = userById(l.user_id) || {}, b = loanBank(l, u);
+  return `<div class="todo glass"><div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div><b>${h(u.full_name || '-')}</b> <span class="small mute">@${h(u.username)} · ke-${l.no} · ${wkt(l.applied_at)}</span>
+    <div class="small mute">NIK ${h(u.nik || '-')} · ${h(u.phone || '-')}</div></div><div class="big" style="font-size:22px">${rp(l.amount)}<div class="small mute" style="text-align:right">${l.tenor} bln</div></div></div>
+    ${stage === 'verif' ? chips(autoChecks(l, u)) : `<div class="note" style="margin:10px 0">Transfer ke: <b>${h(bankStr(b))}</b><div class="small mute">Diverifikasi ${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + h(l.verify.by) : ''}</div></div>`}
+    <div class="row" style="margin-top:10px">${stage === 'verif'
+      ? `<button class="btn pri sm" data-a="aloan" data-id="${l.id}">Periksa &amp; verifikasi</button><button class="btn sm bad" data-a="reject" data-id="${l.id}">Tolak</button>`
+      : `<button class="btn ok sm" data-a="approve" data-id="${l.id}">Kirim modal &amp; unggah bukti</button><button class="btn sm" data-a="aloan" data-id="${l.id}">Detail</button><button class="btn sm bad" data-a="reject" data-id="${l.id}">Tolak</button>`}
+    ${u.phone ? `<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${V.phoneNorm(u.phone).replace(/^0/, '62')}">WhatsApp</a>` : ''}</div></div>`;
+}
+function todoPay(p) {
+  const l = S.d.loans.find(x => x.id === p.loan_id) || {}, u = userById(p.user_id) || {};
+  return `<div class="todo glass"><div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div><b>${h(u.full_name || '-')}</b> <span class="small mute">pinjaman ke-${l.no} · ${wkt(p.paid_on)}</span>
+    <div class="small mute">dari ${h(p.from_bank || '-')}<br>ke ${h(p.to_bank || '-')}</div>${p.note ? `<div class="small mute">“${h(p.note)}”</div>` : ''}</div>
+    <div class="big" style="font-size:22px">${rp(p.amount)}</div></div>
+    <div class="row" style="margin-top:10px">${p.file_id ? `<button class="btn sm" data-a="img" data-id="${p.file_id}">Lihat bukti</button>` : ''}
+    <button class="btn ok sm" data-a="payok" data-id="${p.id}">Terima</button><button class="btn sm bad" data-a="payno" data-id="${p.id}">Tolak</button><button class="btn sm" data-a="aloan" data-id="${p.loan_id}">Pinjaman</button></div></div>`;
+}
+function vATodo() {
+  const t = todo(), sec = (no, title, desc, items) => `<section class="card glass" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${no} · ${title}</h2><span class="badge ${items.length ? '' : 'z'}">${items.length}</span></div>
+    <p class="small mute" style="margin:4px 0 12px">${desc}</p><div class="list">${items.join('') || '<div class="small mute">Tidak ada. 👍</div>'}</div></section>`;
+  const notif = window.Notification && Notification.permission !== 'granted' ? `<div class="row" style="margin-bottom:12px"><button class="btn sm" data-a="notif">🔔 Aktifkan notifikasi desktop</button><span class="small mute">Pemberitahuan saat ada pengajuan / bukti bayar baru (halaman admin harus terbuka).</span></div>` : '';
+  return notif + sec(1, 'Verifikasi pengajuan', 'Pengajuan baru dari peminjam. Periksa NIK, foto KTP/KK/selfie, dan rekening, lalu verifikasi atau tolak.', t.verif.map(l => todoLoan(l, 'verif')))
+    + sec(2, 'Kirim modal', 'Sudah diverifikasi. Transfer dana ke rekening peminjam dari Mandiri / BCA, lalu unggah bukti transfer — pinjaman mulai berjalan.', t.kirim.map(l => todoLoan(l, 'kirim')))
+    + sec(3, 'Verifikasi pengembalian', 'Bukti transfer pengembalian dari peminjam. Cocokkan dengan mutasi rekening, lalu terima atau tolak.', t.bayar.map(todoPay))
+    + (t.late.length ? sec('!', 'Terlambat bayar', 'Pinjaman lewat jatuh tempo — hubungi peminjam.', t.late.map(loanRow)) : '')
+    + (t.baru.length ? sec('i', 'Peminjam baru (7 hari)', 'Sudah daftar, belum mengajukan pinjaman.', t.baru.map(u => `<div class="item glass" data-a="auser" data-id="${u.id}"><div class="av">${h((u.full_name || u.username)[0].toUpperCase())}</div><div class="grow"><b>${h(u.full_name)}</b><div class="small mute">@${h(u.username)} · ${h(u.phone)} · daftar ${wkt(u.created_at)}</div></div></div>`)) : '');
 }
 function loanRow(l) {
   const u = userById(l.user_id) || {}, b = l.status === 'active' ? bill(l, S.d.payments) : null;
@@ -1017,7 +1083,12 @@ function aLoan(id) {
     const u = userById(l.user_id) || {}, b = l.approved_at ? bill(l, S.d.payments) : null;
     modal(`${mh(`${h(u.full_name || 'Akun terhapus')} · ke-${l.no}`)}<div class="row" style="margin-bottom:14px">${statusPill(l, b)}<span class="small mute">@${h(u.username)} · ${h(u.phone)} · diajukan ${wkt(l.applied_at)}</span></div>
       ${rekBox(l, u)}
-      ${l.status === 'pending' ? `<div class="note warn" style="margin-bottom:14px">Periksa dokumen di bawah, transfer dana ke rekening di atas, lalu unggah bukti transfer saat menyetujui.</div><div class="row" style="margin-bottom:16px"><button class="btn ok" data-a="approve" data-id="${l.id}">Setujui &amp; cairkan hari ini</button><button class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div>` : ''}
+      ${l.status === 'pending' && !l.verified_at ? `<div class="card" style="margin-bottom:16px;padding:14px;border:1px solid var(--line);border-radius:18px"><h3 style="margin-top:0">Tahap 1 · Verifikasi</h3>${chips(autoChecks(l, u))}
+        <form data-f="verify" data-id="${l.id}" style="margin-top:12px">${[['ktp', 'Foto KTP asli, terbaca, NIK & nama sama dengan data'], ['selfie', 'Wajah di selfie sama dengan foto KTP'], ['kk', 'KK asli, nama peminjam tercantum'], ['rek', 'Rekening atas nama peminjam sesuai KTP']]
+          .map(([k, t]) => `<label class="chk"><input type="checkbox" name="${k}" required><span>${t}</span></label>`).join('')}
+        <label class="f"><span>Catatan (opsional)</span><input class="i" name="note"></label><div class="err"></div>
+        <div class="row"><button class="btn ok">Verifikasi — lanjut kirim modal</button><button type="button" class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div></form></div>` : ''}
+      ${l.status === 'pending' && l.verified_at ? `<div class="note" style="margin-bottom:14px">✓ Diverifikasi ${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + h(l.verify.by) : ''}. <b>Tahap 2 · Kirim modal:</b> transfer ke rekening di atas, lalu unggah bukti.</div><div class="row" style="margin-bottom:16px"><button class="btn ok" data-a="approve" data-id="${l.id}">Kirim modal &amp; unggah bukti</button><button class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div>` : ''}
       ${l.status === 'active' ? vLoanCard(l, true) + `<form data-f="payadd" data-id="${l.id}" class="row" style="margin-top:12px"><input class="i" name="amount" inputmode="numeric" placeholder="Catat pembayaran (Rp)" style="max-width:220px" value="${b ? b.payoff : ''}"><input class="i" type="date" name="paid_on" value="${new Date().toISOString().slice(0, 10)}" style="max-width:170px"><button class="btn pri">Catat bayar</button>${b && b.payoff <= 0 ? `<button type="button" class="btn ok" data-a="markpaid" data-id="${l.id}">Tandai lunas</button>` : ''}</form>` : ''}
       ${l.status !== 'active' && l.approved_at ? `<h3 style="margin-top:16px">Pembayaran</h3>${payTable(l, true)}` : ''}
       <h3 style="margin-top:18px">Dokumen</h3>${thumbs(l)}
@@ -1159,6 +1230,7 @@ document.addEventListener('click', async e => {
       try { lb.innerHTML = `<img src="${await loadImg(id)}" alt="">`; } catch (er) { lb.innerHTML = '<span style="color:#fff">Gagal memuat</span>'; } break; }
     case 'print': printLoan(id); break;
     case 'struk': strukModal(id); break;
+    case 'notif': Notification.requestPermission().then(p => { toast(p === 'granted' ? 'Notifikasi aktif' : 'Notifikasi ditolak browser'); render(); }); break;
     case 'struk-pdf': strukSave('pdf'); break;
     case 'struk-png': strukSave('png'); break;
     case 'aloan': aLoan(id); break;
@@ -1234,6 +1306,10 @@ document.addEventListener('submit', async e => {
         const then = f.dataset.then;
         if (then === 'wiz') { W.step++; wizard(); } else if (then.startsWith('pay:')) payModal(then.slice(4)); else toast('Rekening disimpan');
         break;
+      }
+      case 'verify': {
+        const r = await rpc('md_verify', { p_token: S.token, p_id: +f.dataset.id, p_checks: { ktp: !!fd.ktp, selfie: !!fd.selfie, kk: !!fd.kk, rek: !!fd.rek }, p_note: fd.note || '' });
+        if (!r.ok) return fail(r.err); toast('Terverifikasi — lanjut kirim modal'); await refresh(true); break;
       }
       case 'ident': {
         const ve = V.nik(fd.nik, S.d.me.birth_date) || V.kk(fd.kk_no); if (ve) return fail(ve);
