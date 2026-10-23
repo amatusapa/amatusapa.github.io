@@ -330,7 +330,7 @@ function vRules() {
   <li>Bunga <b>${RATE}% per bulan</b> dari pokok, tenor 1–3 bulan (1 bulan = 30 hari).</li>
   <li>Lunas sebelum jatuh tempo tetap membayar <b>pokok + bunga ${RATE}%</b> (bunga bulan berjalan).</li>
   <li>Terlambat: denda <b>${LATE}% per hari</b> dari sisa pinjaman.</li>
-  <li>Syarat: foto KTP, foto KK, selfie memegang KTP (diambil langsung dari kamera dengan waktu &amp; lokasi), dan tanda tangan perjanjian.</li>
+  <li>Syarat: foto/berkas KTP dan KK (boleh unggah file), selfie memegang KTP asli (wajib langsung dari kamera dengan waktu, lokasi &amp; koordinat), dan tanda tangan perjanjian.</li>
   <li>Rekening penerima &amp; rekening pembayaran <b>wajib atas nama peminjam sesuai KTP</b>. Setiap pembayaran wajib melampirkan bukti transfer.</li>
   <li>Dana dicairkan dari rekening pemberi modal <b>Mandiri</b> atau <b>BCA</b>. Pengembalian <b>wajib ke rekening yang sama</b> dengan pencairan, dari rekening penerima yang sama, lalu menunggu verifikasi.</li>
   <li>Satu pinjaman berjalan dalam satu waktu.</li></ul></div>`;
@@ -392,12 +392,12 @@ function vUserHome() {
   const l = openLoan(), me = S.d.me;
   const hi = `<section class="hero glass" style="margin-bottom:16px"><div class="small mute">Halo,</div><h1 style="font-size:30px">${h(me.full_name || me.username)}</h1>
     <div class="row"><div><div class="small mute">Batas pinjaman Anda</div><div class="big">${rp(S.d.limit)}</div></div></div></section>`;
-  if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="mute">Siapkan KTP dan KK asli. Foto diambil langsung dari kamera, dengan waktu dan lokasi otomatis.</p>
+  if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="mute">Siapkan KTP dan KK asli (boleh unggah file). Selfie memegang KTP asli diambil langsung dari kamera, dengan waktu, lokasi &amp; koordinat otomatis.</p>
     <button class="btn pri wide" data-a="apply">Ajukan pinjaman</button></div>${vRules()}</div>`;
   if (l.status === 'pending') return hi + `<div class="card glass"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Pengajuan ${rp(l.amount)}</h2>${statusPill(l)}</div>
     <div class="stages"><div class="on">✓ Diajukan<br><span class="small">${wkt(l.applied_at)}</span></div><div class="${l.verified_at ? 'on' : 'now'}">${l.verified_at ? '✓ Diverifikasi admin' : '⏳ Menunggu verifikasi admin'}</div><div class="${l.verified_at ? 'now' : ''}">${l.verified_at ? '⏳ Menunggu pengiriman modal' : 'Pengiriman modal'}</div></div>
     <p class="mute">Tenor ${l.tenor} bulan · dana ditransfer ke ${h(bankStr(l.bank))}. Bukti transfer akan muncul di sini setelah modal dikirim.</p>
-    <div class="row"><button class="btn sm" data-a="viewloan" data-id="${l.id}">Lihat detail</button><button class="btn sm bad" data-a="cancel" data-id="${l.id}">Batalkan pengajuan</button></div></div>`;
+    <div class="row"><a class="btn sm pri" href="${WA_APPLY}" target="_blank" rel="noopener">Ajukan via WhatsApp</a><button class="btn sm" data-a="viewloan" data-id="${l.id}">Lihat detail</button><button class="btn sm bad" data-a="cancel" data-id="${l.id}">Batalkan pengajuan</button></div></div>`;
   return hi + vLoanCard(l);
 }
 function vLoanCard(l, admin) {
@@ -591,7 +591,7 @@ function autoChecks(l, u) {
   const b = loanBank(l, u), docs = ['ktp', 'kk', 'selfie'].map(k => fileById(l.files?.[k])).filter(Boolean);
   return [['NIK cocok tanggal lahir', !V.nik(u.nik, u.birth_date)], ['Nomor KK valid', !V.kk(u.kk_no)],
     ['Rekening a.n. sesuai KTP', !!(b.bank_no && nameOk(b.bank_holder, u.full_name))], ['Nomor rekening wajar', !!b.bank_no && !V.bankNo(b.bank_name, b.bank_no)],
-    ['3 foto kamera + lokasi', docs.length === 3 && docs.every(f => f.meta && f.meta.lat != null && f.meta.source !== 'file-lama')], ['Tanda tangan ada', !!l.files?.sign]];
+    ['KTP & KK terunggah', !!(l.files?.ktp && l.files?.kk)], ['Selfie kamera + lokasi', (f => !!f?.meta && f.meta.lat != null && f.meta.source === 'camera')(fileById(l.files?.selfie))], ['Tanda tangan ada', !!l.files?.sign]];
 }
 const chips = cs => `<div class="chips">${cs.map(([t, ok]) => `<span class="chip ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'} ${t}</span>`).join('')}</div>`;
 function todoLoan(l, stage) {
@@ -654,7 +654,7 @@ function vALoans() {
 }
 function vAUsers() {
   const q = S.q.toLowerCase(), U = S.d.users.filter(u => !q || JSON.stringify(u).toLowerCase().includes(q));
-  return `<div class="row" style="margin-bottom:12px"><input class="i" id="q" placeholder="Cari peminjam…" value="${h(S.q)}" style="max-width:320px"></div>
+  return `<div class="row" style="margin-bottom:12px"><input class="i" id="q" placeholder="Cari peminjam…" value="${h(S.q)}" style="max-width:320px"><button class="btn sm" data-a="jaminan-all" ${S.d.users.length ? '' : 'disabled'}>📄 Berkas jaminan semua peminjam (PDF)</button></div>
     <div class="list">${U.map(u => { const ls = S.d.loans.filter(l => l.user_id === u.id); return `<div class="item glass" data-a="auser" data-id="${u.id}"><div class="av">${h((u.full_name || u.username)[0].toUpperCase())}</div>
     <div class="grow"><b class="ell" style="display:block">${h(u.full_name)} <span class="small mute">@${h(u.username)}</span></b><div class="small mute ell">${h(u.phone)} · ${ls.length} pinjaman · batas ${rp(u.limit)}</div></div>
     ${u.active ? '' : '<span class="pill rejected">Nonaktif</span>'}</div>`; }).join('') || '<div class="card glass mute">Belum ada peminjam.</div>'}</div>`;
@@ -710,9 +710,10 @@ function authModal(mode) {
 
 // ---------- pengajuan (wizard) ----------
 const W = { step: 0 };
-const DOCS = [['ktp', 'Foto KTP', 'Foto KTP asli, seluruh sisi terlihat jelas dan tidak buram.', 'environment'],
-  ['kk', 'Foto Kartu Keluarga', 'Foto KK asli, seluruh halaman terbaca.', 'environment'],
-  ['selfie', 'Selfie memegang KTP', 'Wajah dan KTP terlihat jelas. Foto diberi waktu & lokasi otomatis.', 'user']];
+// KTP & KK boleh unggah file (scan / foto lama); selfie memegang KTP asli wajib kamera langsung + waktu & koordinat
+const DOCS = [['ktp', 'Foto KTP', 'Unggah foto / scan KTP asli — seluruh sisi terlihat jelas dan tidak buram. Boleh dari galeri atau file.', 'environment'],
+  ['kk', 'Foto Kartu Keluarga', 'Unggah foto / scan KK asli — seluruh halaman terbaca. Boleh dari galeri atau file.', 'environment'],
+  ['selfie', 'Selfie memegang KTP asli', 'Wajib foto langsung dari kamera (tidak bisa unggah file), wajah dan KTP asli terlihat jelas. Waktu, lokasi, dan koordinat dicetak otomatis — aktifkan izin lokasi.', 'user']];
 function identModal() {
   const me = S.d.me;
   modal(`${mh('Lengkapi data KTP')}<p class="mute small">Sebelum mengajukan, isi NIK dan Nomor KK sesuai dokumen asli. NIK harus cocok dengan tanggal lahir Anda (${tgl(me.birth_date)}).</p>
@@ -748,9 +749,9 @@ function wizard() {
   } else if (st <= 4) {
     const [k, t, d] = DOCS[st - 2], s = W.shots[k];
     body = `<h3>${t}</h3><p class="mute small">${d}</p><div class="shot">${s ? `<img src="${s.data}" alt="">` : `<div class="ph"><b>${k === 'selfie' ? '🤳' : '🪪'}</b>Belum ada foto</div>`}</div>
-    <div class="row" style="margin-top:12px"><button class="btn ${s ? '' : 'pri'}" data-a="cam" data-k="${k}">${s ? 'Ambil ulang' : 'Buka kamera'}</button>
-    ${k !== 'selfie' ? `<label class="btn sm" style="opacity:.8">Unggah file<input type="file" accept="image/*" capture="environment" data-k="${k}" hidden></label>` : ''}</div>
-    ${s ? `<div class="small mute" style="margin-top:8px">🕒 ${wkt(s.meta.at)} · 📍 ${s.meta.lat != null ? s.meta.lat.toFixed(5) + ', ' + s.meta.lng.toFixed(5) : 'lokasi tidak tersedia'}</div>` : ''}`;
+    <div class="row" style="margin-top:12px">${k === 'selfie' ? `<button class="btn ${s ? '' : 'pri'}" data-a="cam" data-k="${k}">${s ? 'Ambil ulang' : 'Buka kamera'}</button>`
+      : `<label class="btn ${s ? '' : 'pri'}">${s ? 'Ganti file' : 'Unggah file / galeri'}<input type="file" accept="image/*" data-k="${k}" hidden></label><button class="btn sm" data-a="cam" data-k="${k}">Foto dengan kamera</button>`}</div>
+    ${s ? `<div class="small mute" style="margin-top:8px">${s.meta.source === 'camera' ? '📷 kamera' : '📎 file diunggah'} · 🕒 ${wkt(s.meta.at)}${s.meta.lat != null ? ' · 📍 ' + s.meta.lat.toFixed(5) + ', ' + s.meta.lng.toFixed(5) : ''}</div>` : ''}`;
   } else {
     body = `<h3>Perjanjian pinjam modal</h3><div class="agree">${h(agreementText())}</div>
     <div class="small mute" style="margin:12px 0 6px">Tanda tangan di kotak berikut</div><canvas class="sig" id="sig"></canvas>
@@ -808,7 +809,7 @@ Pasal 5 — Pinjaman Berikutnya
 Setelah pinjaman ini lunas, PIHAK KEDUA dapat mengajukan pinjaman berikutnya hingga ${rp(nextLimit(W.amt))} (naik 25%).
 
 Pasal 6 — Data dan Dokumen
-PIHAK KEDUA menyerahkan foto KTP, foto Kartu Keluarga, dan foto selfie memegang KTP yang diambil langsung dengan waktu dan lokasi, serta menyatakan seluruh data adalah benar. Dokumen hanya digunakan untuk keperluan perjanjian ini.
+PIHAK KEDUA menyerahkan foto/berkas KTP dan Kartu Keluarga asli, serta foto selfie memegang KTP asli yang diambil langsung dari kamera dengan cap waktu, lokasi, dan koordinat, serta menyatakan seluruh data adalah benar. Dokumen hanya digunakan untuk keperluan perjanjian ini.
 
 Pasal 7 — Rekening dan Bukti Transfer
 Dana pinjaman hanya dicairkan ke rekening ${bankStr(me)}, yaitu rekening atas nama PIHAK KEDUA yang sesuai dengan KTP. Dana dicairkan dari salah satu rekening PIHAK PERTAMA: ${bankStr(LENDER.mandiri)} atau ${bankStr(LENDER.bca)}, disertai bukti transfer pencairan. Setiap pengembalian wajib ditransfer dari rekening PIHAK KEDUA yang menerima dana tersebut ke rekening PIHAK PERTAMA yang sama dengan rekening pencairan, disertai bukti transfer, dan baru dianggap diterima setelah diverifikasi PIHAK PERTAMA. Pembayaran dari atau ke rekening lain dapat ditolak.
@@ -852,10 +853,18 @@ async function sendApply() {
     const g = W.shots.selfie.meta;
     const r = await rpc('md_apply', { p_token: S.token, p_amount: W.amt, p_tenor: W.n, p_files: files, p_geo: { lat: g.lat, lng: g.lng, acc: g.acc, addr: g.addr, at: g.at }, p_agreement: agreementText() });
     if (!r.ok) throw new Error(r.err);
-    closeModal(); toast('Pengajuan terkirim. Tunggu persetujuan admin.'); S.tab = 'home'; await refresh(true);
+    S.tab = 'home'; await refresh(true); appliedModal();
   } catch (e) { err.textContent = 'Gagal: ' + e.message; btn.disabled = false; btn.textContent = 'Setujui & kirim'; }
 }
 
+// setelah pengajuan terkirim: tombol "Ajukan" → WhatsApp pemberi modal dengan pesan siap kirim, diteruskan otomatis
+const WA_APPLY = 'http://wa.me/+6282299774825?text=' + encodeURIComponent('saya sudah mengajukan pinjaman modal di http://amatusapa.github.io');
+function appliedModal() {
+  modal(`${mh('Pengajuan terkirim ✓')}<p class="mute">Langkah terakhir: konfirmasi pengajuan ke pemberi modal lewat WhatsApp. Anda akan diarahkan otomatis…</p>
+    <div class="note" style="margin:10px 0 14px">Pesan: “saya sudah mengajukan pinjaman modal di http://amatusapa.github.io”</div>
+    <a class="btn pri wide" id="wa-apply" href="${WA_APPLY}" rel="noopener">Ajukan via WhatsApp</a>`);
+  clearTimeout(S.waT); S.waT = setTimeout(() => { if ($('#wa-apply')) location.href = WA_APPLY; }, 1500);
+}
 // ---------- kamera dengan waktu & lokasi ----------
 const C = { stream: null, geo: null, watch: null, addr: '', facing: 'environment', k: null };
 async function openCam(k) {
@@ -904,9 +913,9 @@ function stopCam() {
 }
 function tzName() { const o = -new Date().getTimezoneOffset() / 60; return { 7: 'WIB', 8: 'WITA', 9: 'WIT' }[o] || 'GMT' + (o >= 0 ? '+' : '') + o; }
 function stampAndSave(src, w, hgt, mirror, source) {
-  const k = C.k, g = C.geo;
-  if (!g) { toast('Lokasi wajib aktif untuk semua foto dokumen — izinkan akses lokasi', 4000); return false; }
-  if (source === 'file-lama') { toast('Foto ditolak: bukan foto baru. Gunakan kamera untuk foto real time.', 4500); return false; }
+  const k = C.k, g = C.geo, live = k === 'selfie';
+  if (live && source !== 'camera') { toast('Selfie wajib foto langsung dari kamera', 4500); return false; }
+  if (live && !g) { toast('Lokasi wajib aktif untuk selfie — izinkan akses lokasi', 4000); return false; }
   const q = imgQuality(src, w, hgt); if (q) { toast(q, 4500); return false; }
   const maxS = 1400, sc = Math.min(1, maxS / Math.max(w, hgt));
   const cw = Math.round(w * sc), ch = Math.round(hgt * sc);
@@ -916,8 +925,8 @@ function stampAndSave(src, w, hgt, mirror, source) {
   const now = new Date();
   const lines = [`${DOCS.find(d => d[0] === k)[1].toUpperCase()} · Modalin · @${S.d.me.username}`,
     `${now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} ${now.toLocaleTimeString('id-ID')} ${tzName()}`,
-    g ? `${g.latitude.toFixed(6)}, ${g.longitude.toFixed(6)} (±${Math.round(g.accuracy)} m)` : 'Lokasi tidak tersedia'];
-  if (C.addr) lines.push(C.addr);
+    g ? `${g.latitude.toFixed(6)}, ${g.longitude.toFixed(6)} (±${Math.round(g.accuracy)} m)` : source === 'camera' ? 'Lokasi tidak tersedia' : 'Diunggah dari file · hanya untuk Modalin'];
+  if (C.addr && g) lines.push(C.addr);
   const fs = Math.max(14, Math.round(cw / 46)), lh = fs * 1.35, pad = fs * .8, bh = lines.length * lh + pad * 2;
   x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(0, ch - bh, cw, bh);
   x.fillStyle = '#fff'; x.textBaseline = 'top';
@@ -932,7 +941,7 @@ function imgQuality(src, w, hgt) {
   const d = x.getImageData(0, 0, c.width, c.height).data; let s = 0, s2 = 0, n = d.length / 4;
   for (let i = 0; i < d.length; i += 4) { const y = .299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]; s += y; s2 += y * y; }
   const mean = s / n, sd = Math.sqrt(Math.max(0, s2 / n - mean * mean));
-  if (w < 480 || hgt < 360) return 'Foto terlalu kecil — ambil ulang dengan kamera';
+  if (w < 480 || hgt < 360) return 'Foto terlalu kecil / buram — gunakan foto yang lebih jelas';
   if (mean < 35) return 'Foto terlalu gelap — ambil ulang di tempat terang';
   if (sd < 12) return 'Foto kosong / polos — pastikan dokumen terlihat jelas';
   return '';
@@ -949,10 +958,10 @@ function snap() {
 }
 async function fileShot(input) {
   const f = input.files[0]; if (!f) return;
-  C.k = input.dataset.k; startGeo();
+  C.k = input.dataset.k; if (C.k === 'selfie') return toast('Selfie wajib foto langsung dari kamera');
   const img = await imgEl(URL.createObjectURL(f)).catch(() => null);
   if (!img) return toast('File bukan gambar');
-  if (stampAndSave(img, img.naturalWidth, img.naturalHeight, false, Date.now() - f.lastModified > 10 * 60000 ? 'file-lama' : 'file')) wizard();
+  if (stampAndSave(img, img.naturalWidth, img.naturalHeight, false, 'file')) wizard();
 }
 
 // ---------- struk 1 lembar (A4 150 dpi): data transaksi + ringkasan perjanjian → PNG / PDF ----------
@@ -1014,7 +1023,7 @@ async function strukCanvas(l) {
    `2. Pelunasan sebelum jatuh tempo: pokok + bunga ${+l.rate}% bulan berjalan.`,
    `3. Keterlambatan: denda ${+l.late_rate}% per hari dari sisa pinjaman.`,
    `4. Dana dicairkan ke rekening atas nama peminjam sesuai KTP. Pengembalian wajib dari rekening penerima yang sama ke rekening pemberi modal yang sama dengan pencairan, disertai bukti transfer, dan dianggap diterima setelah diverifikasi.`,
-   `5. Peminjam menyatakan seluruh data dan dokumen (KTP, KK, selfie berlokasi) benar. Perjanjian lengkap disetujui elektronik pada ${wkt(l.applied_at)}.`]
+   `5. Peminjam menyatakan seluruh data dan dokumen (KTP, KK, selfie memegang KTP asli dengan waktu & koordinat) benar. Perjanjian lengkap disetujui elektronik pada ${wkt(l.applied_at)}.`]
     .forEach(t => { Y = wrap(t, M, Y, W_ - M * 2, 29, { sz: 19 }) + 6; });
   // tanda tangan
   const sy = Math.max(Y + 20, H_ - 300);
@@ -1042,7 +1051,7 @@ async function strukSave(kind) {
   const k = S.struk; if (!k) return;
   if (kind === 'png') return saveBlob(await (await fetch(k.url)).blob(), k.name + '.png');
   try {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    await loadScript(JSPDF);
     const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
     pdf.addImage(k.jpg, 'JPEG', 0, 0, 210, 297); saveBlob(pdf.output('blob'), k.name + '.pdf');
   } catch { toast('Gagal membuat PDF — unduh gambar PNG'); }
@@ -1063,7 +1072,7 @@ function thumbs(l) {
   return `<div class="thumbs">${['ktp', 'kk', 'selfie', 'sign', 'cair'].filter(k => l.files[k]).map(k => { const f = fileById(l.files[k]);
     return `<div><div class="th" data-a="img" data-id="${l.files[k]}" data-thumb="${l.files[k]}"><img alt=""><span>${lab[k]}</span></div>
     ${f && f.meta && k === 'cair' ? `<div class="small mute" style="margin-top:4px">diunggah ${wkt(f.meta.at || f.created_at)}</div>` : ''}
-    ${f && f.meta && k !== 'sign' && k !== 'cair' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source && f.meta.source !== 'camera' ? ' · ⚠️ ' + h(f.meta.source) : ' · kamera'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.meta.lat},${f.meta.lng}">📍 peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
+    ${f && f.meta && k !== 'sign' && k !== 'cair' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source === 'camera' ? ' · kamera' : k === 'selfie' ? ' · ⚠️ ' + h(f.meta.source || 'bukan kamera') : ' · file'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.meta.lat},${f.meta.lng}">📍 peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
 }
 function viewLoan(id) {
   const draw = () => {
@@ -1102,7 +1111,7 @@ function aLoan(id) {
         <label class="f"><span>Tanggal cair</span><input class="i" type="date" name="approved_at" value="${l.approved_at ? l.approved_at.slice(0, 10) : ''}"></label>
         <label class="f"><span>Status</span><select class="i" name="status">${['pending', 'active', 'paid', 'rejected', 'cancelled'].map(s => `<option ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label></div>
         <label class="f"><span>Catatan</span><input class="i" name="note" value="${h(l.note || '')}"></label>
-        <div class="row" style="justify-content:space-between"><button class="btn pri">Simpan perubahan</button><span class="row"><button type="button" class="btn sm" data-a="struk" data-id="${l.id}">🧾 Struk</button><button type="button" class="btn sm" data-a="print" data-id="${l.id}">Cetak perjanjian</button><button type="button" class="btn sm bad" data-a="loandel" data-id="${l.id}">Hapus pinjaman</button></span></div></form>
+        <div class="row" style="justify-content:space-between"><button class="btn pri">Simpan perubahan</button><span class="row"><button type="button" class="btn sm pri" data-a="jaminan" data-id="${l.user_id}">📄 Berkas jaminan</button><button type="button" class="btn sm" data-a="struk" data-id="${l.id}">🧾 Struk</button><button type="button" class="btn sm" data-a="print" data-id="${l.id}">Cetak perjanjian</button><button type="button" class="btn sm bad" data-a="loandel" data-id="${l.id}">Hapus pinjaman</button></span></div></form>
       <h3 style="margin-top:18px">Perjanjian</h3><div class="agree">${h(l.agreement || '')}</div>`, 'wide', draw);
     fillThumbs();
   };
@@ -1132,6 +1141,7 @@ function aUser(id) {
     const u = S.d.users.find(x => x.id === +id); if (!u) return closeModal();
     const ls = S.d.loans.filter(l => l.user_id === u.id);
     modal(`${mh(h(u.full_name))}<div class="small mute" style="margin-bottom:14px">@${h(u.username)} · daftar ${tgl(u.created_at)} · login terakhir ${u.last_login ? wkt(u.last_login) : '-'}</div>
+      <div class="row" style="margin-bottom:14px"><button class="btn pri sm" data-a="jaminan" data-id="${u.id}">📄 Berkas jaminan (PDF)</button><span class="small mute">Data diri, dokumen, progres pinjaman &amp; perjanjian lengkap</span></div>
       ${u.bank_no && !bankOk(u) ? `<div class="note bad" style="margin-bottom:12px">Nama rekening (${h(u.bank_holder)}) tidak sama dengan nama KTP (${h(u.full_name)}).</div>` : ''}
       <div class="lines" style="margin-bottom:12px">${ID_F.map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(u[k] || 'belum diisi')}</b></div>`).join('')}</div>
       <form data-f="useredit" data-id="${u.id}">${FIELDS.concat(BANK_F).map(([k, v]) => `<label class="f"><span>${v}</span>${k === 'address' ? `<textarea class="i" name="${k}" rows="2">${h(u[k] || '')}</textarea>` : `<input class="i" name="${k}" ${k === 'birth_date' ? 'type="date"' : ''} value="${h(u[k] || '')}">`}</label>`).join('')}
@@ -1155,6 +1165,224 @@ async function printLoan(id) {
     <pre>${h(l.agreement)}</pre><p>Disetujui: ${wkt(l.applied_at)}${l.geo?.addr ? ' · ' + h(l.geo.addr) : ''}</p><p>PIHAK KEDUA,</p>${imgs.sign ? `<img class="s" src="${imgs.sign}">` : ''}<p><b>${h(userById(l.user_id)?.full_name || '')}</b></p>
     <h3>Lampiran</h3><div class="g">${['ktp', 'kk', 'selfie'].map(k => imgs[k] ? `<div><b>${k.toUpperCase()}</b><img src="${imgs[k]}"></div>` : '').join('')}</div><script>setTimeout(()=>print(),400)<\/script>`);
   w.document.close();
+}
+// ---------- berkas jaminan (admin): data diri + dokumen + progres + perjanjian lengkap → PDF A4 beberapa halaman ----------
+const JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+// font standar PDF hanya Latin-1: ganti tanda baca Unicode, buang emoji
+const pdfTxt = s => String(s ?? '').replace(/[—–]/g, '-').replace(/…/g, '...').replace(/→/g, '->').replace(/[✓✔]/g, 'v').replace(/[✗✘]/g, 'x')
+  .replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/[^\x09\x0a\x0d\x20-\x7e\xa0-\xff]/g, '');
+const ST_L = { pending: 'Menunggu persetujuan', active: 'Berjalan', paid: 'Lunas', rejected: 'Ditolak', cancelled: 'Dibatalkan' };
+async function pdfImg(src) {
+  const im = await imgEl(src), png = /^data:image\/png/.test(src);
+  if (png || /^data:image\/jpe?g/.test(src)) return { data: src, fmt: png ? 'PNG' : 'JPEG', w: im.naturalWidth, h: im.naturalHeight };
+  const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0);
+  return { data: c.toDataURL('image/jpeg', .85), fmt: 'JPEG', w: c.width, h: c.height };
+}
+// jadwal cicilan dengan status per angsuran
+function dueRows(l, b) {
+  let cum = 0; const today = day0(Date.now());
+  return b.dues.map(x => { cum += x.amt; const ok = l.status === 'paid' || b.paid + 0.5 >= cum; return { ...x, st: ok ? 'Lunas' : x.d < today ? 'Terlambat' : 'Belum jatuh tempo' }; });
+}
+const docMeta = f => !f?.meta ? '' : [f.meta.at ? (f.meta.source === 'camera' ? 'Diambil ' : 'Diunggah ') + wkt(f.meta.at) + (f.meta.tz ? ' ' + f.meta.tz : '') : '', f.meta.source === 'camera' ? 'kamera langsung' : f.meta.source === 'file' ? 'dari file' : f.meta.source ? 'sumber: ' + f.meta.source : '',
+  f.meta.lat != null ? `GPS ${(+f.meta.lat).toFixed(6)}, ${(+f.meta.lng).toFixed(6)}${f.meta.acc ? ' (±' + f.meta.acc + ' m)' : ''}` : '', f.meta.addr || ''].filter(Boolean).join(' · ');
+
+async function jaminanPdf(uids) {
+  const users = uids.map(userById).filter(Boolean);
+  if (!users.length) return toast('Tidak ada peminjam');
+  toast(`Menyiapkan berkas jaminan${users.length > 1 ? ` (${users.length} peminjam)` : ''}…`, 5000);
+  try { await loadScript(JSPDF); } catch { return toast('Gagal memuat pembuat PDF — periksa koneksi'); }
+  const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  const PW = 210, PH = 297, M = 15, CW = PW - M * 2, TOP = 20, BOT = PH - 16, INK = [15, 27, 45], MUTE = [91, 101, 119], LINE = [217, 222, 231];
+  const heads = {}, now = new Date();
+  let y = TOP, who = '';
+  const fnt = (sz, st = 'normal', fam = 'helvetica') => { pdf.setFont(fam, st); pdf.setFontSize(sz); };
+  const clr = c => pdf.setTextColor(...c);
+  const page = () => { pdf.addPage(); y = TOP; heads[pdf.getNumberOfPages()] = who; };
+  const need = hh => { if (y + hh > BOT) page(); };
+  const lines = (t, w) => pdf.splitTextToSize(pdfTxt(t), w);
+  const para = (t, o = {}) => {
+    fnt(o.sz || 9.5, o.st, o.fam); clr(o.c || INK); const lh = (o.sz || 9.5) * 0.42 + (o.gap ?? 1.2);
+    for (const ln of lines(t, o.w || CW)) { need(lh); pdf.text(ln, o.x ?? M, y + lh * 0.75); y += lh; }
+  };
+  const rule = (c = LINE) => { pdf.setDrawColor(...c); pdf.setLineWidth(0.3); pdf.line(M, y, PW - M, y); };
+  const h1 = t => { need(16); pdf.setFillColor(...INK); pdf.rect(M, y, CW, 8, 'F'); fnt(10.5, 'bold'); clr([255, 255, 255]); pdf.text(pdfTxt(t), M + 3, y + 5.5); y += 12; };
+  const h2 = t => { need(14); fnt(10.5, 'bold'); clr(INK); pdf.text(pdfTxt(t), M, y + 4); y += 6; rule(); y += 3; };
+  // pasangan label/isi dalam kolom
+  const kvs = (rows, cols = 2) => {
+    const gap = 6, cw = (CW - gap * (cols - 1)) / cols;
+    for (let i = 0; i < rows.length; i += cols) {
+      const chunk = rows.slice(i, i + cols).map(([k, v]) => { fnt(9.5, 'bold'); return { k, v: lines(v === '' || v == null ? '-' : v, cw) }; });
+      const hh = 4 + Math.max(...chunk.map(c => c.v.length)) * 4.3 + 2.2;
+      need(hh);
+      chunk.forEach((c, j) => { const X = M + j * (cw + gap); fnt(7.5); clr(MUTE); pdf.text(pdfTxt(c.k).toUpperCase(), X, y + 2.8); fnt(9.5, 'bold'); clr(INK); c.v.forEach((ln, n) => pdf.text(ln, X, y + 7 + n * 4.3)); });
+      y += hh;
+    }
+    y += 1;
+  };
+  // tabel dengan kepala diulang di halaman baru
+  const table = (head, rows, ws, al = []) => {
+    const W_ = ws.map(w => w * CW / ws.reduce((a, b) => a + b, 0)), pad = 1.6;
+    const hdr = () => { need(7); pdf.setFillColor(242, 244, 248); pdf.rect(M, y, CW, 6.5, 'F'); fnt(8, 'bold'); clr(MUTE);
+      let X = M; head.forEach((t, i) => { pdf.text(pdfTxt(t), al[i] === 'r' ? X + W_[i] - pad : X + pad, y + 4.4, { align: al[i] === 'r' ? 'right' : 'left' }); X += W_[i]; }); y += 6.5; };
+    hdr();
+    if (!rows.length) { fnt(8.5); clr(MUTE); need(6); pdf.text('Tidak ada data.', M + pad, y + 4.2); y += 7; return; }
+    for (const r of rows) {
+      fnt(8.5); const cells = r.map((c, i) => lines(c, W_[i] - pad * 2)), hh = Math.max(...cells.map(c => c.length)) * 3.8 + 2.6;
+      if (y + hh > BOT) { page(); hdr(); }
+      let X = M; cells.forEach((c, i) => { fnt(8.5, i === 0 ? 'bold' : 'normal'); clr(/Terlambat|Ditolak/.test(r[i]) ? [192, 57, 43] : /^(Lunas|Diterima)$/.test(r[i]) ? [30, 142, 78] : INK);
+        c.forEach((ln, n) => pdf.text(ln, al[i] === 'r' ? X + W_[i] - pad : X + pad, y + 3.9 + n * 3.8, { align: al[i] === 'r' ? 'right' : 'left' })); X += W_[i]; });
+      y += hh; pdf.setDrawColor(...LINE); pdf.setLineWidth(0.2); pdf.line(M, y, PW - M, y);
+    }
+    y += 3;
+  };
+  // foto dalam grid; keterangan di bawah tiap foto
+  const gallery = async (items, cols = 2, boxH = 72) => {
+    const ok = [];
+    for (const it of items) { if (!it.id) continue; try { ok.push({ ...it, im: await pdfImg(await loadImg(it.id)) }); } catch { ok.push({ ...it, im: null }); } }
+    const gap = 5, bw = (CW - gap * (cols - 1)) / cols;
+    for (let i = 0; i < ok.length; i += cols) {
+      const row = ok.slice(i, i + cols); fnt(7.2);
+      const capH = Math.max(...row.map(r => lines(r.cap || '', bw).length)) * 3.2 + 6;
+      need(boxH + capH + 2);
+      row.forEach((r, j) => {
+        const X = M + j * (bw + gap);
+        pdf.setDrawColor(...LINE); pdf.setLineWidth(0.3); pdf.rect(X, y, bw, boxH);
+        if (r.im) { const sc = Math.min((bw - 2) / r.im.w, (boxH - 2) / r.im.h), w = r.im.w * sc, hh = r.im.h * sc; pdf.addImage(r.im.data, r.im.fmt, X + (bw - w) / 2, y + (boxH - hh) / 2, w, hh, undefined, 'FAST'); }
+        else { fnt(8); clr(MUTE); pdf.text('Gambar tidak dapat dimuat', X + bw / 2, y + boxH / 2, { align: 'center' }); }
+        fnt(8.5, 'bold'); clr(INK); pdf.text(pdfTxt(r.t), X, y + boxH + 4);
+        fnt(7.2); clr(MUTE); lines(r.cap || '', bw).forEach((ln, n) => pdf.text(ln, X, y + boxH + 7.5 + n * 3.2));
+      });
+      y += boxH + capH + 2;
+    }
+  };
+  const sign = async (id, X, w = 60) => { if (!id) return 0; try { const im = await pdfImg(await loadImg(id)), hh = Math.min(26, im.h * w / im.w); pdf.addImage(im.data, im.fmt, X, y, im.w * hh / im.h, hh); return hh; } catch { return 0; } };
+
+  for (const [ui, u] of users.entries()) {
+    who = `${u.full_name || u.username} · NIK ${u.nik || '-'}`;
+    if (ui) page(); else heads[1] = who;
+    const ls = S.d.loans.filter(l => l.user_id === u.id).sort((a, b) => b.id - a.id);
+    const pays = S.d.payments.filter(p => p.user_id === u.id || ls.some(l => l.id === p.loan_id));
+    const bs = Object.fromEntries(ls.filter(l => l.approved_at).map(l => [l.id, bill(l, S.d.payments)]));
+    const act = ls.filter(l => l.status === 'active'), late = act.filter(l => bs[l.id]?.overdue);
+    // judul
+    fnt(17, 'bold'); clr(INK); pdf.text('BERKAS JAMINAN PEMINJAM', M, y + 6); y += 9;
+    fnt(9); clr(MUTE); pdf.text(pdfTxt(`No. BJ-${String(u.id).padStart(5, '0')}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')} · dicetak ${wkt(now)} oleh @${S.d.me.username}`), M, y + 3); y += 7;
+    para(`Berkas ini memuat data diri, dokumen identitas, perjanjian pinjam modal, dan riwayat pinjaman serta pembayaran PIHAK KEDUA sebagaimana tersimpan di sistem Modalin, sebagai bukti dan jaminan atas perjanjian antara PIHAK PERTAMA (${PEMODAL.name}) dan PIHAK KEDUA (${u.full_name || u.username}).`, { sz: 9, c: MUTE });
+    y += 3;
+    // ringkasan
+    const lent = ls.filter(l => l.approved_at).reduce((s, l) => s + +l.amount, 0), recv = pays.filter(p => p.status === 'ok').reduce((s, p) => s + +p.amount, 0);
+    const owe = act.reduce((s, l) => s + bs[l.id].remainingContract, 0), lateD = late.reduce((s, l) => s + bs[l.id].lateDays, 0);
+    const kp = [['Jumlah pinjaman', String(ls.length)], ['Total dicairkan', rp(lent)], ['Total diterima', rp(recv)], ['Sisa tagihan', rp(owe)],
+      ['Status', late.length ? `Terlambat ${lateD} hari` : act.length ? 'Lancar' : ls.some(l => l.status === 'pending') ? 'Menunggu' : 'Tidak ada berjalan']];
+    need(18); const kw = (CW - 4 * 3) / 5;
+    kp.forEach(([k, v], i) => { const X = M + i * (kw + 3); pdf.setFillColor(242, 244, 248); pdf.roundedRect(X, y, kw, 15, 2, 2, 'F');
+      fnt(6.8); clr(MUTE); pdf.text(pdfTxt(k).toUpperCase(), X + 2.5, y + 4.6); let sz = 10; fnt(sz, 'bold'); while (sz > 7 && pdf.getTextWidth(pdfTxt(v)) > kw - 5) fnt(sz -= 0.5, 'bold'); clr(i === 4 && late.length ? [192, 57, 43] : INK); pdf.text(pdfTxt(v), X + 2.5, y + 11); });
+    y += 21;
+
+    h1('1. DATA DIRI PEMINJAM');
+    kvs([...ID_F, ...FIELDS, ...BANK_F].map(([k, v]) => [v, k === 'birth_date' ? (u[k] ? tglL(u[k]) : '-') : u[k]])
+      .concat([['Akun', '@' + u.username], ['Terdaftar', u.created_at ? wkt(u.created_at) : '-'], ['Login terakhir', u.last_login ? wkt(u.last_login) : '-'],
+        ['Status akun', u.active ? 'Aktif' : 'Nonaktif'], ['Batas pinjaman berikutnya', rp(u.limit)], ['Rekening a.n. sesuai KTP', u.bank_no ? (nameOk(u.bank_holder, u.full_name) ? 'Ya' : 'TIDAK SESUAI') : 'Belum diisi']]));
+
+    h1('2. DOKUMEN IDENTITAS');
+    const docL = ls.find(l => l.files?.ktp || l.files?.kk || l.files?.selfie), DOCK = [['ktp', 'Foto KTP'], ['kk', 'Foto Kartu Keluarga'], ['selfie', 'Selfie memegang KTP']];
+    if (docL) {
+      para(`Dari pengajuan pinjaman ke-${docL.no} (${wkt(docL.applied_at)}). KTP dan KK diunggah peminjam; selfie memegang KTP asli diambil langsung dari kamera dengan cap waktu, lokasi, dan koordinat tercetak pada foto.`, { sz: 8.5, c: MUTE }); y += 1;
+      await gallery(DOCK.map(([k, t]) => ({ id: docL.files[k], t, cap: docMeta(fileById(docL.files[k])) })), 2, 68);
+    } else para('Belum ada dokumen (peminjam belum pernah mengajukan pinjaman).', { c: MUTE });
+
+    h1('3. PINJAMAN, PROGRES & PERJANJIAN');
+    if (!ls.length) para('Belum ada pinjaman.', { c: MUTE });
+    for (const l of ls) {
+      const b = bs[l.id], pl = plan(+l.amount, +l.tenor, +l.rate), src = l.bank?.lender ? LENDER[l.bank.lender] : null, dst = loanBank(l, u);
+      need(40); y += 2;
+      h2(`Pinjaman ke-${l.no} · No. MDL-${String(l.id).padStart(5, '0')}-${l.no} · ${ST_L[l.status] || l.status}${b?.overdue ? ' · TERLAMBAT' : ''}`);
+      const endD = l.approved_at ? new Date(new Date(l.approved_at).getTime() + l.tenor * 30 * DAY) : null;
+      kvs([['Pokok pinjaman', rp(l.amount)], ['Tenor', `${l.tenor} bulan (1 bulan = 30 hari)`], ['Bunga', `${+l.rate}% / bulan (${rp(pl.I)})`], ['Cicilan / bulan', rp(pl.inst)],
+        ['Total kontrak', rp(pl.total)], ['Denda keterlambatan', `${+l.late_rate}% / hari dari sisa pinjaman`],
+        ['Diajukan', wkt(l.applied_at)], ['Diverifikasi admin', l.verified_at ? `${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + l.verify.by : ''}` : '-'],
+        ['Dicairkan', l.approved_at ? wkt(l.approved_at) : '-'], [l.status === 'paid' ? 'Lunas pada' : 'Jatuh tempo akhir', l.status === 'paid' && l.paid_at ? wkt(l.paid_at) : endD ? tglL(endD) : '-'],
+        ['Pencairan dari rekening', src ? bankStr(src) : '-'], ['Diterima di rekening', bankStr(dst)],
+        ['Pengembalian wajib ke', src ? bankStr(src) + ' (rekening sama)' : '-'], ['Lokasi saat tanda tangan', l.geo?.lat != null ? `${l.geo.addr ? l.geo.addr + ' · ' : ''}${(+l.geo.lat).toFixed(5)}, ${(+l.geo.lng).toFixed(5)}` : '-']]
+        .concat(l.note ? [['Catatan admin', l.note]] : []).concat(l.verify?.note ? [['Catatan verifikasi', l.verify.note]] : []));
+      if (l.verified_at) {
+        const vc = [['ktp', 'KTP asli & data sama'], ['selfie', 'Wajah selfie = foto KTP'], ['kk', 'KK asli, nama tercantum'], ['rek', 'Rekening a.n. sesuai KTP']];
+        para('Pemeriksaan admin: ' + vc.map(([k, t]) => `[${l.verify?.[k] ? 'v' : ' '}] ${t}`).join('   '), { sz: 8.5 }); y += 2;
+      }
+      if (b) {
+        // progres pembayaran
+        const tot = b.contract + b.denda, pct = tot ? Math.min(1, b.paid / tot) : 0;
+        need(16); fnt(9, 'bold'); clr(INK); pdf.text(pdfTxt(`Progres: terbayar ${rp(b.paid)} dari ${rp(tot)} (${Math.round(pct * 100)}%)`), M, y + 4);
+        pdf.setFillColor(230, 234, 241); pdf.roundedRect(M, y + 6.5, CW, 4, 2, 2, 'F');
+        if (pct > 0) { pdf.setFillColor(...(b.overdue ? [192, 57, 43] : [30, 142, 78])); pdf.roundedRect(M, y + 6.5, Math.max(4, CW * pct), 4, 2, 2, 'F'); }
+        y += 14;
+        kvs([['Sudah dibayar (diverifikasi)', rp(b.paid)], ['Denda berjalan', `${rp(b.denda)} (${b.lateDays} hari terlambat)`],
+          ['Sisa kontrak + denda', rp(l.status === 'paid' ? 0 : b.remainingContract)], ['Pelunasan hari ini', rp(l.status === 'paid' ? 0 : b.payoff)],
+          ['Cicilan berikutnya', l.status === 'active' && b.next ? `Ke-${b.next.k} · ${rp(b.next.amt)} · ${tglL(b.next.d)}${b.next.overdue ? ' (lewat tempo)' : ''}` : '-']], 2);
+        fnt(9, 'bold'); clr(INK); need(8); pdf.text('Jadwal cicilan', M, y + 3); y += 5;
+        table(['Ke', 'Jatuh tempo', 'Nominal', 'Status'], dueRows(l, b).map(r => [String(r.k), tglL(r.d), rp(r.amt), r.st]), [8, 40, 30, 30], ['', '', 'r', '']);
+      }
+      const lp = S.d.payments.filter(p => p.loan_id === l.id).sort((a, c) => new Date(a.paid_on) - new Date(c.paid_on));
+      if (l.approved_at || lp.length) {
+        fnt(9, 'bold'); clr(INK); need(8); pdf.text('Riwayat pembayaran', M, y + 3); y += 5;
+        table(['Tanggal', 'Nominal', 'Dari rekening', 'Ke rekening', 'Status', 'Catatan'],
+          lp.map(p => [wkt(p.paid_on), rp(p.amount), p.from_bank || (p.by_admin ? 'dicatat admin' : '-'), p.to_bank || '-', { ok: 'Diterima', pending: 'Menunggu verifikasi', rejected: 'Ditolak' }[p.status] || p.status, p.note || '']),
+          [24, 22, 38, 38, 20, 22], ['', 'r']);
+      }
+      // bukti transfer & dokumen pinjaman ini (bila berbeda dari bagian 2)
+      const ev = [];
+      if (l.files?.cair) ev.push({ id: l.files.cair, t: 'Bukti pencairan', cap: (fileById(l.files.cair)?.meta?.at ? 'diunggah ' + wkt(fileById(l.files.cair).meta.at) + ' · ' : '') + rp(l.amount) });
+      lp.filter(p => p.file_id).forEach(p => ev.push({ id: p.file_id, t: `Bukti bayar ${tgl(p.paid_on)}`, cap: `${rp(p.amount)} · ${({ ok: 'Diterima', pending: 'Menunggu', rejected: 'Ditolak' })[p.status] || p.status}` }));
+      if (docL && l !== docL) DOCK.forEach(([k, t]) => { if (l.files?.[k] && l.files[k] !== docL.files[k]) ev.push({ id: l.files[k], t: `${t} (pengajuan ke-${l.no})`, cap: docMeta(fileById(l.files[k])) }); });
+      if (ev.length) { fnt(9, 'bold'); clr(INK); need(8); pdf.text('Bukti transfer & dokumen', M, y + 3); y += 6; await gallery(ev, 3, 52); }
+      // perjanjian lengkap + tanda tangan
+      if (l.agreement) {
+        need(30); fnt(9, 'bold'); clr(INK); pdf.text(`Perjanjian lengkap (disetujui elektronik ${pdfTxt(wkt(l.applied_at))})`, M, y + 3); y += 6;
+        pdf.setFillColor(248, 249, 252); para(l.agreement, { sz: 8, fam: 'courier', gap: 0.9 }); y += 3;
+        need(42); fnt(8.5); clr(MUTE); pdf.text('PIHAK KEDUA,', M, y + 3); pdf.text('PIHAK PERTAMA,', PW - M - 60, y + 3); y += 5;
+        const sh = await sign(l.files?.sign, M); y += Math.max(sh, 18) + 2;
+        fnt(9.5, 'bold'); clr(INK); pdf.text(pdfTxt(u.full_name || ''), M, y + 3); pdf.text(pdfTxt(PEMODAL.name), PW - M - 60, y + 3); y += 4;
+        fnt(7.5); clr(MUTE); pdf.text(pdfTxt(`Tanda tangan digital · ${wkt(l.applied_at)}`), M, y + 3);
+        if (l.approved_at) pdf.text(pdfTxt(`Disetujui & dicairkan ${wkt(l.approved_at)}`), PW - M - 60, y + 3); y += 9;
+      }
+    }
+
+    // aktivitas akun (log server menyimpan 300 entri terakhir)
+    const lids = new Set(ls.map(l => l.id)), pids = new Set(pays.map(p => p.id));
+    const lg = (S.d.log || []).filter(g => g.user_id === u.id || [g.detail?.loan, g.detail?.loan_id].some(v => lids.has(+v)) || (g.detail?.id != null && /pay|bayar/i.test(g.action) ? pids.has(+g.detail.id) : g.detail?.id != null && lids.has(+g.detail.id)) || [g.detail?.user, g.detail?.user_id].some(v => +v === u.id));
+    h1('4. RIWAYAT AKTIVITAS');
+    table(['Waktu', 'Akun', 'Aktivitas', 'Detail'], lg.slice().reverse().map(g => [wkt(g.at), '@' + (g.username || '-'), g.action,
+      g.detail && Object.keys(g.detail).length ? Object.entries(g.detail).map(([k, v]) => k + ': ' + (typeof v === 'object' ? JSON.stringify(v) : v)).join(' · ').slice(0, 220) : '']), [26, 20, 30, 64]);
+
+    // pernyataan penutup + tempat tanda tangan basah & meterai
+    h1('5. PERNYATAAN');
+    para(`Data, dokumen, perjanjian, dan riwayat transaksi di atas diambil langsung dari sistem Modalin pada ${wkt(now)}. PIHAK KEDUA telah menyetujui perjanjian secara elektronik dengan tanda tangan digital, selfie memegang KTP asli berwaktu & berkoordinat, dan rekening atas nama sendiri. Berkas ini dapat dicetak dan ditandatangani ulang di atas meterai sebagai penguat jaminan.`, { sz: 9 });
+    y += 4; need(52);
+    const sx = PW - M - 64;
+    fnt(8.5); clr(MUTE); pdf.text(pdfTxt(`Magelang, ${tglL(now)}`), sx, y + 3); y += 7;
+    pdf.text('PIHAK KEDUA (Peminjam),', M, y + 3); pdf.text('PIHAK PERTAMA (Pemberi Modal),', sx, y + 3); y += 5;
+    pdf.setDrawColor(...MUTE); pdf.setLineDashPattern([1, 1], 0); pdf.rect(M, y, 26, 18); pdf.setLineDashPattern([], 0);
+    fnt(6.5); pdf.text('Meterai', M + 13, y + 8, { align: 'center' }); pdf.text('Rp10.000', M + 13, y + 11.5, { align: 'center' });
+    y += 30; fnt(9.5, 'bold'); clr(INK); pdf.text(pdfTxt(u.full_name || ''), M, y); pdf.text(pdfTxt(PEMODAL.name), sx, y);
+    pdf.setDrawColor(...INK); pdf.setLineWidth(0.3); pdf.line(M, y + 1.5, M + 64, y + 1.5); pdf.line(sx, y + 1.5, PW - M, y + 1.5);
+    fnt(7.5, 'normal'); clr(MUTE); pdf.text(pdfTxt(`NIK ${u.nik || '-'}`), M, y + 5.5); y += 8;
+  }
+
+  // kepala & kaki tiap halaman
+  const n = pdf.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    pdf.setPage(i); pdf.setFillColor(...INK); pdf.rect(0, 0, PW, 11, 'F');
+    fnt(8.5, 'bold'); clr([255, 255, 255]); pdf.text('MODALIN · Berkas Jaminan Peminjam', M, 7);
+    fnt(8); pdf.text(pdfTxt(heads[i] || ''), PW - M, 7, { align: 'right' });
+    pdf.setDrawColor(...LINE); pdf.setLineWidth(0.3); pdf.line(M, PH - 11, PW - M, PH - 11);
+    fnt(7.2); clr(MUTE); pdf.text(pdfTxt(`RAHASIA · berisi data pribadi · dicetak ${wkt(now)} · amatusapa.github.io`), M, PH - 6.5);
+    pdf.text(`Halaman ${i} / ${n}`, PW - M, PH - 6.5, { align: 'right' });
+  }
+  const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const name = users.length > 1 ? `Berkas-Jaminan-Semua-Peminjam-${ymd}` : `Berkas-Jaminan-${(users[0].full_name || users[0].username).replace(/[^\w]+/g, '-')}-${ymd}`;
+  pdf.setProperties({ title: name.replace(/-/g, ' '), subject: 'Berkas jaminan peminjam Modalin', author: 'Modalin', creator: 'Modalin' });
+  saveBlob(pdf.output('blob'), name + '.pdf');
+  toast(`PDF berkas jaminan siap: ${n} halaman`);
 }
 function payModal(id) {
   const l = S.d.loans.find(x => x.id === +id), b = bill(l, S.d.payments), me = S.d.me;
@@ -1235,6 +1463,8 @@ document.addEventListener('click', async e => {
     case 'struk-png': strukSave('png'); break;
     case 'aloan': aLoan(id); break;
     case 'auser': aUser(id); break;
+    case 'jaminan': jaminanPdf([+id]); break;
+    case 'jaminan-all': jaminanPdf(S.d.users.map(u => u.id)); break;
     case 'approve': cairModal(id); break;
     case 'wbank': $('#bankf')?.requestSubmit(); break;
     case 'reject': if (await ask('Tolak pengajuan ini?')) adm('loan_update', { id, status: 'rejected' }, 'Pengajuan ditolak'); break;
