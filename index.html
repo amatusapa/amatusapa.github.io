@@ -2,6 +2,8 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; connect-src 'self' https://bbptcxpzzvgpxqylkrmw.supabase.co https://nominatim.openstreetmap.org data: blob:; object-src 'none'; base-uri 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Amatusapa Cash</title>
 <meta name="description" content="Amatusapa Cash — pinjaman dana tunai.">
@@ -205,6 +207,14 @@ label.rek{cursor:pointer}label.rek input{width:18px;height:18px;flex:none}
 .ok-t{color:var(--ok)}.bad-t{color:var(--bad)}
 @media (max-width:520px){.hide-sm{display:none}.card{padding:16px}.hero{padding:22px 18px}}
 @media print{.orbs,header.top,.tabs,.no-print{display:none!important}body{background:#fff;color:#000}}
+.grid>*,.list>*{min-width:0}
+.howto{margin:0 0 16px;padding-left:20px;color:var(--mute);line-height:1.55}.howto li{margin-bottom:4px}
+.pth{width:46px;height:46px;flex:none;border-radius:10px;overflow:hidden;background:var(--edge);border:1px solid var(--line)}.pth img{width:100%;height:100%;object-fit:cover}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.mcard{border-radius:var(--r);overflow:hidden;cursor:pointer;border:1px solid var(--line);display:flex;flex-direction:column}.mcard:hover{border-color:var(--acc)}
+.mimg{aspect-ratio:4/3;background:var(--edge)}.mimg img{width:100%;height:100%;object-fit:cover;display:block}
+.mb{padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}.mp{font-size:19px;font-weight:800;margin-top:4px}
+@media (max-width:520px){.mgrid{grid-template-columns:1fr 1fr;gap:10px}.mb{padding:10px}.mp{font-size:16px}}
 </style>
 </head>
 <body>
@@ -303,12 +313,13 @@ async function refresh(force) {
 }
 // admin: jumlah tugas di judul tab + pemberitahuan saat ada pengajuan / bukti bayar baru
 function adminAlert() {
-  const t = todo(), n = t.total, ids = new Set([...t.verif.map(l => 'l' + l.id), ...t.kirim.map(l => 'k' + l.id), ...t.bayar.map(p => 'p' + p.id)]);
+  const t = todo(), n = t.total, ids = new Set([...t.verif.map(l => 'l' + l.id), ...t.kirim.map(l => 'k' + l.id), ...t.bayar.map(p => 'p' + p.id), ...t.g.taksir.map(p => 'g' + p.id), ...t.g.tebus.map(p => 't' + p.id), ...(S.d.offers || []).filter(o => o.status === 'aktif').map(o => 'o' + o.id + '-' + o.amount)]);
   document.title = n ? `(${n}) ${APP}` : APP;
   const fresh = S.seen ? [...ids].filter(i => !S.seen.has(i) && i[0] !== 'k') : [];
   S.seen = ids;
   if (!fresh.length) return;
-  const msg = `${fresh.filter(i => i[0] === 'l').length ? fresh.filter(i => i[0] === 'l').length + ' pengajuan baru' : ''}${fresh.some(i => i[0] === 'l') && fresh.some(i => i[0] === 'p') ? ' · ' : ''}${fresh.filter(i => i[0] === 'p').length ? fresh.filter(i => i[0] === 'p').length + ' bukti pengembalian' : ''} perlu ditindaklanjuti`;
+  const gn = fresh.filter(i => 'gto'.includes(i[0])).length;
+  const msg = `${gn ? gn + ' aktivitas gadai baru' + (fresh.length > gn ? ' · ' : '') : ''}${fresh.filter(i => i[0] === 'l').length ? fresh.filter(i => i[0] === 'l').length + ' pengajuan baru' : ''}${fresh.some(i => i[0] === 'l') && fresh.some(i => i[0] === 'p') ? ' · ' : ''}${fresh.filter(i => i[0] === 'p').length ? fresh.filter(i => i[0] === 'p').length + ' bukti pengembalian' : ''} perlu ditindaklanjuti`;
   toast(msg, 5000);
   try { if (window.Notification && Notification.permission === 'granted') new Notification(APP, { body: msg }); } catch {}
 }
@@ -406,13 +417,15 @@ function paintRanges() { document.querySelectorAll('.rng').forEach(r => r.style.
 
 // ---------- peminjam ----------
 function vUser() {
-  const tabs = [['home', 'Beranda'], ['calc', 'Simulasi'], ['hist', 'Riwayat'], ['prof', 'Profil']];
+  const tabs = [['home', 'Beranda'], ['gadai', 'Gadai'], ['pasar', 'Pasar'], ['calc', 'Simulasi'], ['hist', 'Riwayat'], ['prof', 'Profil']];
   if (!tabs.some(t => t[0] === S.tab)) S.tab = 'home';
   const nav = `<nav class="tabs glass">${tabs.map(([k, v]) => `<button data-a="tab" data-v="${k}" class="${S.tab === k ? 'on' : ''}">${v}</button>`).join('')}</nav>`;
   let b = '';
   if (S.tab === 'home') b = vUserHome();
   if (S.tab === 'calc') b = `<div class="grid g2">${vCalc(S.d.limit)}${vRules()}</div>`;
   if (S.tab === 'hist') b = vHist();
+  if (S.tab === 'gadai') b = vGadai();
+  if (S.tab === 'pasar') b = vPasar();
   if (S.tab === 'prof') b = vProfile();
   return nav + b;
 }
@@ -606,9 +619,9 @@ function vProfile() {
 // ---------- admin ----------
 function vAdmin() {
   const n = todo().total;
-  const tabs = [['todo', `Tindak lanjut${n ? ` <span class="badge">${n}</span>` : ''}`], ['sum', 'Ringkasan'], ['loans', 'Pinjaman'], ['users', 'Peminjam'], ['log', 'Aktivitas'], ['set', 'Pengaturan']];
+  const tabs = [['todo', `Tindak lanjut${n ? ` <span class="badge">${n}</span>` : ''}`], ['sum', 'Ringkasan'], ['loans', 'Pinjaman'], ['gadai', 'Gadai'], ['users', 'Peminjam'], ['log', 'Aktivitas'], ['set', 'Pengaturan']];
   const nav = `<nav class="tabs glass">${tabs.map(([k, v]) => `<button data-a="atab" data-v="${k}" class="${S.atab === k ? 'on' : ''}">${v}</button>`).join('')}</nav>`;
-  return nav + ({ todo: vATodo, sum: vASum, loans: vALoans, users: vAUsers, log: vALog, set: vASet }[S.atab] || vATodo)();
+  return nav + ({ todo: vATodo, sum: vASum, loans: vALoans, gadai: vAGadai, users: vAUsers, log: vALog, set: vASet }[S.atab] || vATodo)();
 }
 // ---------- antrean tindak lanjut admin: verifikasi → kirim modal → verifikasi pengembalian ----------
 function todo() {
@@ -617,7 +630,11 @@ function todo() {
   const bayar = P.filter(p => p.status === 'pending');
   const late = L.filter(l => l.status === 'active' && bill(l, P).overdue);
   const baru = (S.d?.users || []).filter(u => !L.some(l => l.user_id === u.id) && Date.now() - new Date(u.created_at) < 7 * 864e5);
-  return { verif, kirim, bayar, late, baru, total: verif.length + kirim.length + bayar.length };
+  const PW = S.d?.pawns || [], g = {
+    taksir: PW.filter(p => p.status === 'diajukan'), cair: PW.filter(p => p.status === 'disetujui'),
+    tebus: PW.filter(p => p.tebus?.status === 'pending'), tawaran: PW.filter(p => p.status === 'dijual' && (S.d.offers || []).some(o => o.pawn_id === p.id && o.status === 'aktif')),
+    jual: PW.filter(p => typeof pawnSellable === 'function' && pawnSellable(p) && p.tebus?.status !== 'pending') };
+  return { verif, kirim, bayar, late, baru, g, total: verif.length + kirim.length + bayar.length + g.taksir.length + g.cair.length + g.tebus.length + g.tawaran.length };
 }
 // pemeriksaan otomatis yang bisa dihitung dari data; foto tetap dicocokkan admin dengan mata
 function autoChecks(l, u) {
@@ -655,6 +672,8 @@ function vATodo() {
   return notif + sec(1, 'Verifikasi pengajuan', 'Periksa data, dokumen, dan rekening.', t.verif.map(l => todoLoan(l, 'verif')))
     + sec(2, 'Pencairan dana', 'Transfer dana, lalu unggah bukti.', t.kirim.map(l => todoLoan(l, 'kirim')))
     + sec(3, 'Verifikasi pengembalian', 'Cocokkan bukti dengan mutasi rekening.', t.bayar.map(todoPay))
+    + (t.g.taksir.length + t.g.cair.length + t.g.tebus.length + t.g.tawaran.length + t.g.jual.length ? sec('G', 'Gadai barang', '', [...t.g.taksir.map(p => todoPawn(p, 'taksir')), ...t.g.cair.map(p => todoPawn(p, 'cair')),
+      ...t.g.tebus.map(p => todoPawn(p, 'tebus')), ...t.g.tawaran.map(p => todoPawn(p, 'tawaran')), ...t.g.jual.map(p => todoPawn(p, 'jual'))]) : '')
     + (t.late.length ? sec(4, 'Terlambat bayar', 'Lewat jatuh tempo.', t.late.map(loanRow)) : '')
     + (t.baru.length ? sec(5, 'Peminjam baru', 'Terdaftar 7 hari terakhir, belum mengajukan.', t.baru.map(u => `<div class="item glass" data-a="auser" data-id="${u.id}"><div class="av">${h((u.full_name || u.username)[0].toUpperCase())}</div><div class="grow"><b>${h(u.full_name)}</b><div class="small mute">@${h(u.username)} · ${h(u.phone)} · daftar ${wkt(u.created_at)}</div></div></div>`)) : '');
 }
@@ -706,7 +725,236 @@ function vASet() {
     <div class="note" style="margin-bottom:12px">Pemberi pinjaman: <b>${h(PEMODAL.name)}</b><div class="small mute">${h(PEMODAL.addr)}</div><div class="small">${h(bankStr(LENDER.mandiri))}<br>${h(bankStr(LENDER.bca))}</div></div>
     <label class="f"><span>Nomor WhatsApp konfirmasi</span><input class="i" name="wa" value="${h(s.wa || '')}"></label>
     <button class="btn pri">Simpan</button></form></div>
+    <div class="card glass"><h2>Password admin</h2><form data-f="pass"><label class="f"><span>Password lama</span><input class="i" type="password" name="old" required autocomplete="current-password"></label>
+    <label class="f"><span>Password baru (min. 10 karakter)</span><input class="i" type="password" name="new" minlength="10" required autocomplete="new-password"></label><div class="err"></div>
+    <button class="btn pri">Ganti password</button></form><div class="small mute" style="margin-top:10px">Sesi admin berakhir otomatis setelah 12 jam.</div></div>
     <div class="card glass"><h2>Tampilan</h2><button class="btn sm" data-a="theme">Tema: ${{ auto: 'Otomatis', light: 'Terang', dark: 'Gelap' }[LS.get('theme') || 'auto']}</button></div></div>`;
+}
+
+// ---------- gadai barang & pasar (tawaran pembeli) ----------
+// alur: diajukan → ditawar (admin menaksir) → disetujui → aktif (barang diterima, dana cair) → ditebus,
+// atau dijual (lewat jatuh tempo + GRACE hari / atas permintaan pemilik) → terjual; sisa hasil jual untuk penggadai
+const PAWN_CAT = ['Handphone & tablet', 'Laptop & komputer', 'Elektronik', 'Kamera', 'Emas & perhiasan', 'Jam tangan', 'Kendaraan', 'Alat kerja', 'Lainnya'];
+const PAWN_COND = ['Baru', 'Seperti baru', 'Baik', 'Cukup', 'Rusak ringan'];
+const PAWN_ST = { diajukan: 'Diajukan', ditawar: 'Ada penawaran', disetujui: 'Serahkan barang', aktif: 'Digadai', dijual: 'Dijual', terjual: 'Terjual', ditebus: 'Ditebus', ditolak: 'Ditolak', batal: 'Dibatalkan' };
+const PAWN_CLS = { diajukan: 'pending', ditawar: 'pending', disetujui: 'pending', aktif: 'active', dijual: 'late', terjual: 'paid', ditebus: 'paid', ditolak: 'rejected', batal: 'cancelled' };
+const GRACE = 7;
+const WA_NO = '6282299774825';
+const waTo = (no, text) => `https://wa.me/${no}?text=${encodeURIComponent(text)}`;
+const pawnPill = p => `<span class="pill ${PAWN_CLS[p.status] || ''}">${PAWN_ST[p.status] || h(p.status)}</span>`;
+// sama dengan md_pawn_debt di server: pokok + bunga per 30 hari berjalan, minimal 1 bulan
+function pawnDebt(p, t = Date.now()) {
+  if (!p.cair_at || !p.amount) return 0;
+  const m = Math.max(1, Math.ceil((t - new Date(p.cair_at)) / (30 * DAY)));
+  return Math.round(+p.amount + +p.amount * +p.rate / 100 * m);
+}
+const pawnPlan = p => { const I = Math.round(p.amount * p.rate / 100); return { I, total: +p.amount + I * p.tenor }; };
+const pawnSellFrom = p => p.due_at ? new Date(p.due_at).getTime() + GRACE * DAY : null;
+const pawnSellable = p => p.status === 'aktif' && p.due_at && Date.now() >= pawnSellFrom(p);
+const pawnById = id => (S.d?.pawns || []).find(p => p.id === +id);
+const myPawns = () => (S.d?.pawns || []).filter(p => p.user_id === S.d.me.id);
+const pawnOffers = id => (S.d?.offers || []).filter(o => o.pawn_id === +id);
+const photo = (id, lab = '') => `<div class="th" data-a="img" data-id="${+id}" data-thumb="${+id}"><img alt="">${lab ? `<span>${h(lab)}</span>` : ''}</div>`;
+const pawnPhotos = p => `<div class="thumbs">${(p.photos || []).map((id, i) => photo(id, 'Foto ' + (i + 1))).join('')}</div>`;
+const lns = rows => `<div class="lines">${rows.filter(r => r && r[1] != null && r[1] !== '').map(([k, v, b]) => `<div class="ln"><span>${k}</span>${b === false ? `<span>${v}</span>` : `<b>${v}</b>`}</div>`).join('')}</div>`;
+function pawnInfo(p) {
+  return lns([['Kategori', h(p.category)], ['Merek / tipe', h(p.brand || '')], ['Kondisi', h(p.cond)], ['Tahun', p.year ? +p.year : ''], ['Kelengkapan', h(p.kelengkapan || '')]])
+    + `<p class="small" style="white-space:pre-wrap;margin-top:10px">${h(p.spec)}</p>`;
+}
+async function pawnRpc(fn, args, msg) {
+  const r = await rpc(fn, { p_token: S.token, ...args });
+  if (!r.ok) { toast(r.err); return false; }
+  if (msg) toast(msg); await refresh(true); return true;
+}
+
+// ----- penggadai -----
+function vGadai() {
+  const P = myPawns();
+  return `<div class="grid g2"><div class="card glass"><h2>Gadai barang</h2><p class="lead">Jaminkan barang berharga. Dana cair setelah barang diterima dan diperiksa.</p>
+    <ol class="howto small"><li>Ajukan foto dan data barang.</li><li>Admin menaksir dan menawarkan nilai pinjaman.</li><li>Setujui, serahkan barang, dana ditransfer ke rekening Anda.</li>
+    <li>Tebus sebelum jatuh tempo. Lewat ${GRACE} hari dari jatuh tempo, barang dapat dijual; sisa hasil penjualan setelah utang dikembalikan kepada Anda.</li></ol>
+    <button class="btn pri wide" data-a="pawnnew">Ajukan gadai</button></div>
+    <div class="card glass"><h2>Barang saya</h2><div class="list">${P.map(pawnItem).join('') || '<div class="small mute">Belum ada barang.</div>'}</div></div></div>`;
+}
+function pawnItem(p, admin) {
+  const u = admin ? userById(p.user_id) || {} : null;
+  const sub = p.status === 'ditawar' ? `ditawar ${rp(p.amount)}` : p.status === 'aktif' || p.status === 'dijual' ? `tebus ${rp(pawnDebt(p))} · tempo ${tgl(p.due_at)}`
+    : p.status === 'terjual' ? `terjual ${rp(p.sale?.price)}` : p.status === 'disetujui' ? `pinjaman ${rp(p.amount)}` : `minta ${rp(p.ask_amount)} · ${tgl(p.created_at)}`;
+  return `<div class="item glass" data-a="${admin ? 'apawn' : 'pawn'}" data-id="${p.id}">${p.photos?.[0] ? `<div class="pth" data-thumb="${+p.photos[0]}"><img alt=""></div>` : ''}
+    <div class="grow"><b class="ell" style="display:block">${h(p.title)}</b><div class="small mute ell">${admin ? h(u.full_name || 'Akun terhapus') + ' · ' : ''}${h(p.category)} · ${sub}</div></div>${pawnPill(p)}</div>`;
+}
+function pawnNewModal() {
+  if (!S.d.me.nik) return identModal();
+  modal(`${mh('Ajukan gadai')}<form data-f="pawnnew">
+    <div class="f2"><label class="f"><span>Kategori</span><select class="i" name="category" required><option value="">Pilih…</option>${PAWN_CAT.map(c => `<option>${c}</option>`).join('')}</select></label>
+    <label class="f"><span>Kondisi</span><select class="i" name="cond" required><option value="">Pilih…</option>${PAWN_COND.map(c => `<option>${c}</option>`).join('')}</select></label></div>
+    <label class="f"><span>Nama barang</span><input class="i" name="title" required minlength="3" maxlength="80" placeholder="contoh: iPhone 13 128 GB"></label>
+    <div class="f2"><label class="f"><span>Merek / tipe</span><input class="i" name="brand" maxlength="60"></label>
+    <label class="f"><span>Tahun pembelian</span><input class="i" name="year" inputmode="numeric" maxlength="4"></label></div>
+    <label class="f"><span>Kelengkapan</span><input class="i" name="kelengkapan" maxlength="200" placeholder="nota, dus, charger, sertifikat…"></label>
+    <label class="f"><span>Deskripsi & spesifikasi</span><textarea class="i" name="spec" rows="4" required minlength="10" maxlength="1000" placeholder="spesifikasi, cacat / lecet, nomor seri / IMEI"></textarea></label>
+    <div class="f2"><label class="f"><span>Perkiraan nilai barang (Rp)</span><input class="i" name="est_value" inputmode="numeric" required></label>
+    <label class="f"><span>Pinjaman diminta (Rp)</span><input class="i" name="ask_amount" inputmode="numeric" required></label></div>
+    <label class="f"><span>Tenor</span><select class="i" name="tenor">${[1, 2, 3].map(n => `<option value="${n}">${n} bulan</option>`).join('')}</select></label>
+    <label class="f"><span>Foto barang (2–6 foto: depan, belakang, nomor seri, kelengkapan)</span><input class="i" type="file" accept="image/*" multiple id="pawn-photos" required></label>
+    <div class="thumbs" id="pawn-prev" style="margin-bottom:12px"></div>
+    <label class="chk"><input type="checkbox" name="own" required><span>Barang milik saya sendiri, diperoleh secara sah, dan tidak sedang dijaminkan di tempat lain.</span></label>
+    <label class="chk"><input type="checkbox" name="sell" required><span>Saya setuju barang dapat dijual bila tidak ditebus sampai ${GRACE} hari setelah jatuh tempo; sisa hasil penjualan setelah pelunasan utang dikembalikan kepada saya.</span></label>
+    <div class="err"></div><button class="btn pri wide">Kirim pengajuan</button></form>`, 'wide');
+}
+function viewPawn(id) {
+  const draw = () => {
+    const p = pawnById(id); if (!p) return closeModal();
+    const me = S.d.me, debt = pawnDebt(p), offs = pawnOffers(p.id).filter(o => o.status === 'aktif'), top = Math.max(0, ...offs.map(o => +o.amount));
+    let act = '';
+    if (p.status === 'diajukan') act = `<div class="note">Menunggu penaksiran admin.</div><div class="row" style="margin-top:12px"><button class="btn sm bad" data-a="pawnact" data-v="batal" data-id="${p.id}">Batalkan pengajuan</button></div>`;
+    if (p.status === 'ditawar') { const pl = pawnPlan(p);
+      act = `<h3 style="margin-top:0">Penawaran</h3>${lns([['Nilai taksiran', rp(p.appraisal)], ['Pinjaman', rp(p.amount)], ['Bunga', `${+p.rate}% / bulan (${rp(pl.I)})`], ['Tenor', p.tenor + ' bulan'], ['Tebus pada jatuh tempo', rp(pl.total)]])}
+        ${p.admin_note ? `<div class="note" style="margin-top:10px">${h(p.admin_note)}</div>` : ''}
+        ${bankOk(me) ? `<div class="note" style="margin:10px 0">Dana ditransfer ke ${h(bankStr(me))}.</div><div class="row"><button class="btn ok" data-a="pawnact" data-v="setuju" data-id="${p.id}">Setujui penawaran</button><button class="btn bad" data-a="pawnact" data-v="batal" data-id="${p.id}">Tolak</button></div>`
+          : `<div class="note warn" style="margin:10px 0">Daftarkan rekening atas nama Anda untuk menerima dana.</div>${bankForm(me)}`}`; }
+    if (p.status === 'disetujui') act = `<div class="note">Serahkan barang ke <b>${h(PEMODAL.name)}</b>, ${h(PEMODAL.addr)}. Dana <b>${rp(p.amount)}</b> ditransfer ke ${h(bankStr(p.bank))} setelah barang diterima dan diperiksa.</div>
+      <div class="row" style="margin-top:12px"><a class="btn sm pri" target="_blank" rel="noopener" href="${waTo(WA_NO, `Saya ingin menyerahkan barang gadai G-${p.id} (${p.title}).`)}">Atur serah terima via WhatsApp</a></div>`;
+    if (p.status === 'aktif' || p.status === 'dijual') {
+      const tb = p.tebus || {};
+      act = lns([['Pinjaman', rp(p.amount)], ['Dicairkan', wkt(p.cair_at)], ['Jatuh tempo', tgl(p.due_at)], ['Bunga', `${+p.rate}% / bulan`], ['Tebus hari ini', rp(debt)]])
+        + (p.cair_file ? `<div class="row" style="margin-top:8px"><button class="btn sm" data-a="img" data-id="${+p.cair_file}">Bukti pencairan</button></div>` : '')
+        + (tb.status === 'pending' ? `<div class="note warn" style="margin-top:10px">Bukti tebus ${rp(tb.amount)} sedang diperiksa.</div>` : tb.status === 'rejected' ? `<div class="note bad" style="margin-top:10px">Bukti tebus ditolak${tb.reason ? ': ' + h(tb.reason) : ''}. Kirim ulang.</div>` : '')
+        + (p.status === 'aktif' && Date.now() > new Date(p.due_at) ? `<div class="note bad" style="margin-top:10px">Lewat jatuh tempo. Barang dapat dijual mulai ${tgl(pawnSellFrom(p))} bila belum ditebus.</div>` : '')
+        + (p.status === 'dijual' ? `<div class="note" style="margin-top:10px">Dijual ${p.sale_by === 'owner' ? 'atas permintaan Anda' : 'karena lewat jatuh tempo'} · harga dasar ${rp(p.sale_price)} · ${offs.length} tawaran${top ? ', tertinggi ' + rp(top) : ''}</div>` : '')
+        + `<div class="row" style="margin-top:12px">${tb.status !== 'pending' ? `<button class="btn ok" data-a="pawntebus" data-id="${p.id}">Tebus barang</button>` : ''}
+          ${p.status === 'aktif' ? `<button class="btn" data-a="pawnjual" data-id="${p.id}">Jual barang ini</button>` : ''}
+          ${p.status === 'dijual' && p.sale_by === 'owner' ? `<button class="btn" data-a="pawnact" data-v="tarik" data-id="${p.id}">Batalkan penjualan</button>` : ''}</div>`;
+    }
+    if (p.status === 'terjual') { const s = p.sale || {};
+      act = lns([['Harga jual', rp(s.price)], ['Utang gadai saat dijual', rp(s.debt)], [s.shortfall ? 'Kekurangan' : 'Sisa untuk Anda', rp(s.shortfall || s.surplus)], ['Tanggal', wkt(s.at)]])
+        + `<div class="note" style="margin-top:10px">${s.surplus ? `Sisa ${rp(s.surplus)} ditransfer ke ${h(bankStr(p.bank))}.` : s.shortfall ? 'Hasil penjualan belum menutup utang. Admin akan menghubungi Anda.' : 'Hasil penjualan tepat menutup utang.'}</div>`; }
+    if (p.status === 'ditebus') act = `<div class="note">Ditebus ${wkt(p.redeemed_at)}. Barang dapat diambil kembali.</div>`;
+    if (p.status === 'ditolak') act = `<div class="note bad">Pengajuan ditolak${p.admin_note ? ': ' + h(p.admin_note) : ''}.</div>`;
+    modal(`${mh(h(p.title))}<div class="row" style="margin-bottom:14px">${pawnPill(p)}<span class="small mute">G-${p.id} · diajukan ${wkt(p.created_at)}</span></div>${act}
+      <h3 style="margin-top:18px">Foto</h3>${pawnPhotos(p)}<h3 style="margin-top:18px">Data barang</h3>
+      ${lns([['Perkiraan nilai', rp(p.est_value)], ['Pinjaman diminta', rp(p.ask_amount)]])}${pawnInfo(p)}`, 'wide', draw);
+    fillThumbs();
+  };
+  draw();
+}
+function pawnTebusModal(id) {
+  const p = pawnById(id), to = p.bank?.lender;
+  modal(`${mh('Tebus barang')}<form data-f="pawntebus" data-id="${p.id}">
+    <div class="f"><span>Transfer ke rekening (sama dengan pencairan)</span>${to ? rekRow(to) : rekRow('mandiri') + rekRow('bca')}</div>
+    <div class="note" style="margin-bottom:12px">Dari rekening: <b>${h(bankStr(p.bank))}</b></div>
+    <label class="f"><span>Nominal (Rp)</span><input class="i" name="amount" inputmode="numeric" required value="${pawnDebt(p)}"></label>
+    <div class="small mute" style="margin:-6px 0 10px">Tebus hari ini: ${rp(pawnDebt(p))} (pokok + bunga ${+p.rate}% per 30 hari berjalan)</div>
+    <label class="f"><span>Bukti transfer</span><input class="i" type="file" accept="image/*" id="tebus-file" data-prev="tebus-prev" required></label>
+    <div class="shot" id="tebus-prev" style="display:none;margin-bottom:12px"></div>
+    <label class="f"><span>Catatan</span><input class="i" name="note" placeholder="opsional"></label>
+    <div class="err"></div><button class="btn pri wide">Kirim bukti tebus</button></form>`);
+}
+function pawnJualModal(id) {
+  const p = pawnById(id), d = pawnDebt(p);
+  modal(`${mh('Jual barang ini')}<p class="lead">Barang tampil di Pasar. Pembeli mengajukan tawaran; setelah tawaran diterima admin, hasil penjualan melunasi utang gadai dan sisanya ditransfer kepada Anda.</p>
+    ${lns([['Utang gadai hari ini', rp(d)], ['Nilai taksiran', rp(p.appraisal)]])}
+    <form data-f="pawnjual" data-id="${p.id}" style="margin-top:12px"><label class="f"><span>Harga dasar (Rp)</span><input class="i" name="price" inputmode="numeric" required value="${Math.max(d, +p.appraisal || 0)}"></label>
+    <div class="err"></div><button class="btn pri wide">Tampilkan di Pasar</button></form>`);
+}
+
+// ----- pasar: pembeli -----
+function vPasar() {
+  const all = S.d.market || [], items = all.filter(m => m.status === 'dijual'), won = all.filter(m => m.status === 'terjual' && !m.mine);
+  return `<div class="card glass" style="margin-bottom:16px"><h2>Pasar barang gadai</h2><p class="lead" style="margin-bottom:0">Ajukan tawaran untuk barang yang dijual. Admin memilih tawaran dan menghubungi pembeli untuk pembayaran dan serah terima.</p></div>
+    ${won.map(m => `<div class="note" style="margin-bottom:12px" data-a="mitem" data-id="${m.id}">Tawaran Anda untuk <b>${h(m.title)}</b> diterima (${rp(m.sold_price)}). Admin akan menghubungi Anda.</div>`).join('')}
+    <div class="mgrid">${items.map(marketCard).join('') || '<div class="card glass mute">Belum ada barang dijual.</div>'}</div>`;
+}
+const myOffer = id => (S.d.offers || []).find(o => o.pawn_id === +id && o.buyer_id === S.d.me.id);
+function marketCard(m) {
+  const my = myOffer(m.id);
+  return `<div class="mcard glass" data-a="mitem" data-id="${m.id}"><div class="mimg" data-thumb="${+m.photos?.[0]}"><img alt=""></div><div class="mb">
+    <b class="ell" style="display:block">${h(m.title)}</b><div class="small mute ell">${h(m.category)} · ${h(m.cond)}</div>
+    <div class="mp">${rp(m.sale_price)}</div><div class="small mute">${+m.offers} tawaran${m.top ? ' · tertinggi ' + rp(m.top) : ''}</div>
+    ${m.mine ? '<span class="pill">Barang Anda</span>' : my?.status === 'aktif' ? `<span class="pill active">Tawaran Anda ${rp(my.amount)}</span>` : ''}</div></div>`;
+}
+function marketItem(id) {
+  const draw = () => {
+    const m = (S.d.market || []).find(x => x.id === +id); if (!m) return closeModal();
+    const my = myOffer(m.id), act = my?.status === 'aktif';
+    let box;
+    if (m.mine) box = `<div class="note">Ini barang Anda. Lihat perkembangannya di menu Gadai.</div>`;
+    else if (m.status === 'terjual') box = `<div class="note">Tawaran Anda ${rp(m.sold_price)} diterima. Admin akan menghubungi Anda untuk pembayaran dan serah terima.</div>
+      <div class="row" style="margin-top:10px"><a class="btn sm pri" target="_blank" rel="noopener" href="${waTo(WA_NO, `Tawaran saya untuk barang P-${m.id} (${m.title}) diterima.`)}">Hubungi via WhatsApp</a></div>`;
+    else box = `<form data-f="offer" data-id="${m.id}">${act ? `<div class="note" style="margin-bottom:10px">Tawaran Anda saat ini: <b>${rp(my.amount)}</b>. Kirim lagi untuk mengubah.</div>` : my?.status === 'ditolak' ? `<div class="note bad" style="margin-bottom:10px">Tawaran sebelumnya ditolak.</div>` : ''}
+      <label class="f"><span>Tawaran Anda (Rp)</span><input class="i" name="amount" inputmode="numeric" required value="${act ? my.amount : Math.max(+m.sale_price || 0, +m.top || 0)}"></label>
+      <label class="f"><span>Catatan untuk admin</span><input class="i" name="note" maxlength="300" placeholder="opsional, mis. waktu ambil barang"></label>
+      <label class="chk"><input type="checkbox" name="ok" required><span>Saya sanggup membayar bila tawaran diterima.</span></label>
+      <div class="err"></div><div class="row"><button class="btn pri">${act ? 'Ubah tawaran' : 'Kirim tawaran'}</button>${act ? `<button type="button" class="btn bad" data-a="offerdel" data-id="${m.id}">Tarik tawaran</button>` : ''}</div></form>`;
+    modal(`${mh(h(m.title))}<div class="row" style="margin-bottom:14px"><span class="pill late">Dijual</span><span class="small mute">P-${m.id} · sejak ${tgl(m.listed_at)}</span></div>
+      ${lns([['Harga dasar', rp(m.sale_price)], ['Nilai taksiran', m.appraisal ? rp(m.appraisal) : ''], ['Tawaran masuk', String(+m.offers)], ['Tawaran tertinggi', m.top ? rp(m.top) : '-']])}
+      <div style="margin:14px 0">${box}</div><h3>Foto</h3>${pawnPhotos(m)}<h3 style="margin-top:18px">Data barang</h3>${pawnInfo(m)}`, 'wide', draw);
+    fillThumbs();
+  };
+  draw();
+}
+
+// ----- admin -----
+function vAGadai() {
+  const f = S.pf || 'all', P = (S.d.pawns || []).filter(p => f === 'all' || p.status === f);
+  const segs = [['all', 'Semua'], ...Object.entries(PAWN_ST)].filter(([k]) => k === 'all' || (S.d.pawns || []).some(p => p.status === k));
+  return `<div class="row" style="margin-bottom:12px"><div class="seg">${segs.map(([k, v]) => `<button data-a="pf" data-v="${k}" class="${f === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
+    <div class="list">${P.map(p => pawnItem(p, true)).join('') || '<div class="card glass mute">Belum ada barang gadai.</div>'}</div>`;
+}
+function todoPawn(p, what) {
+  const u = userById(p.user_id) || {}, offs = pawnOffers(p.id).filter(o => o.status === 'aktif');
+  const right = what === 'tebus' ? rp(p.tebus.amount) : what === 'tawaran' ? rp(Math.max(...offs.map(o => +o.amount))) : what === 'taksir' ? rp(p.ask_amount) : rp(p.amount);
+  const sub = { taksir: `minta ${rp(p.ask_amount)} · nilai ${rp(p.est_value)}`, cair: `ke ${h(bankStr(p.bank))}`, tebus: `utang ${rp(pawnDebt(p))}`, tawaran: `${offs.length} tawaran · harga dasar ${rp(p.sale_price)}`, jual: `tempo ${tgl(p.due_at)} · utang ${rp(pawnDebt(p))}` }[what];
+  return `<div class="todo glass"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><b>${h(p.title)}</b> <span class="small mute">G-${p.id} · ${h(u.full_name || '-')}</span>
+    <div class="small mute">${sub}</div></div><div class="big" style="font-size:22px">${right}</div></div>
+    <div class="row" style="margin-top:10px"><button class="btn pri sm" data-a="apawn" data-id="${p.id}">${{ taksir: 'Taksir', cair: 'Cairkan', tebus: 'Periksa tebusan', tawaran: 'Pilih tawaran', jual: 'Jual' }[what]}</button>
+    ${u.phone ? `<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${V.phoneNorm(u.phone).replace(/^0/, '62')}">WhatsApp</a>` : ''}</div></div>`;
+}
+function aPawn(id) {
+  const draw = () => {
+    const p = pawnById(id); if (!p) return closeModal();
+    const u = userById(p.user_id) || {}, debt = pawnDebt(p), offs = pawnOffers(p.id).sort((a, b) => b.amount - a.amount), tb = p.tebus || {};
+    let act = '';
+    if (p.status === 'diajukan' || p.status === 'ditawar') act = `<h3 style="margin-top:0">${p.status === 'ditawar' ? 'Ubah penawaran' : 'Taksir & tawarkan'}</h3><form data-f="ptawar" data-id="${p.id}"><div class="f2">
+      <label class="f"><span>Nilai taksiran (Rp)</span><input class="i" name="appraisal" inputmode="numeric" required value="${p.appraisal || p.est_value}"></label>
+      <label class="f"><span>Pinjaman ditawarkan (Rp)</span><input class="i" name="amount" inputmode="numeric" required value="${p.amount || Math.min(p.ask_amount, p.appraisal || p.est_value)}"></label>
+      <label class="f"><span>Bunga / bulan (%)</span><input class="i" name="rate" inputmode="decimal" required value="${+p.rate}"></label>
+      <label class="f"><span>Tenor</span><select class="i" name="tenor">${[1, 2, 3].map(n => `<option value="${n}" ${+p.tenor === n ? 'selected' : ''}>${n} bulan</option>`).join('')}</select></label></div>
+      <label class="f"><span>Catatan untuk penggadai</span><input class="i" name="note" maxlength="300" value="${h(p.admin_note || '')}"></label><div class="err"></div>
+      <div class="row"><button class="btn ok">Kirim penawaran</button><button type="button" class="btn bad" data-a="padm" data-v="tolak" data-id="${p.id}">Tolak</button></div></form>`;
+    if (p.status === 'disetujui') act = `<h3 style="margin-top:0">Terima barang & cairkan</h3>${lns([['Pinjaman', rp(p.amount)], ['Ke rekening', h(bankStr(p.bank))]])}
+      <form data-f="pcair" data-id="${p.id}" style="margin-top:12px"><div class="f"><span>Ditransfer dari rekening</span>${rekRow('mandiri', 'lender') + rekRow('bca', 'lender')}</div>
+      <label class="chk"><input type="checkbox" name="received" required><span>Barang sudah saya terima dan sesuai foto / deskripsi.</span></label>
+      <label class="f"><span>Bukti transfer</span><input class="i" type="file" accept="image/*" id="pcair-file" data-prev="pcair-prev" required></label>
+      <div class="shot" id="pcair-prev" style="display:none;margin-bottom:12px"></div>
+      <label class="f"><span>Tanggal cair</span><input class="i" type="date" name="cair_at" value="${new Date().toISOString().slice(0, 10)}"></label>
+      <div class="err"></div><div class="row"><button class="btn ok">Simpan pencairan</button><button type="button" class="btn bad" data-a="padm" data-v="tolak" data-id="${p.id}">Tolak</button></div></form>`;
+    if (p.status === 'aktif' || p.status === 'dijual') {
+      act = lns([['Pinjaman', rp(p.amount)], ['Dicairkan', wkt(p.cair_at)], ['Jatuh tempo', tgl(p.due_at)], ['Boleh dijual mulai', tgl(pawnSellFrom(p))], ['Utang hari ini', rp(debt)], ['Rekening penggadai', h(bankStr(p.bank))]]);
+      if (tb.status === 'pending') act += `<div class="todo" style="margin-top:12px"><b>Bukti tebus ${rp(tb.amount)}</b> <span class="small mute">${wkt(tb.at)} · utang saat itu ${rp(tb.debt)}</span>
+        ${tb.note ? `<div class="small mute">“${h(tb.note)}”</div>` : ''}<div class="row" style="margin-top:8px"><button class="btn sm" data-a="img" data-id="${+tb.file}">Lihat bukti</button>
+        <button class="btn ok sm" data-a="padm" data-v="tebus_ok" data-id="${p.id}">Terima, barang dikembalikan</button><button class="btn bad sm" data-a="padm" data-v="tebus_no" data-id="${p.id}">Tolak</button></div></div>`;
+      if (p.status === 'aktif') act += pawnSellable(p) ? `<form data-f="pjual" data-id="${p.id}" class="row" style="margin-top:12px"><input class="i" name="price" inputmode="numeric" style="max-width:220px" value="${Math.max(debt, +p.appraisal || 0)}" placeholder="Harga dasar (Rp)"><button class="btn">Jual di Pasar</button></form>`
+        : `<div class="note" style="margin-top:12px">Belum boleh dijual: hak tebus penggadai sampai ${tgl(pawnSellFrom(p))}.</div>`;
+      if (p.status === 'dijual') act += `<h3 style="margin-top:16px">Tawaran pembeli</h3><div class="note" style="margin-bottom:10px">Dijual ${p.sale_by === 'owner' ? 'atas permintaan penggadai' : 'karena lewat jatuh tempo'} · harga dasar ${rp(p.sale_price)}</div>
+        <div class="tbl"><table><tr><th>Pembeli</th><th>Tawaran</th><th>Sisa untuk penggadai</th><th></th></tr>${offs.map(o => { const b = userById(o.buyer_id) || {};
+          return `<tr><td><b>${h(b.full_name || '-')}</b><div class="small mute">@${h(b.username || '-')} · ${h(b.phone || '')} · ${wkt(o.updated_at)}</div>${o.note ? `<div class="small mute">“${h(o.note)}”</div>` : ''}</td><td><b>${rp(o.amount)}</b>${o.amount < p.sale_price ? '<div class="small bad-t">di bawah harga dasar</div>' : ''}</td>
+          <td>${o.amount >= debt ? rp(o.amount - debt) : `<span class="bad-t">kurang ${rp(debt - o.amount)}</span>`}</td><td>${o.status === 'aktif' ? `<button class="btn ok sm" data-a="padm" data-v="terima" data-o="${o.id}" data-id="${p.id}">Terima</button>` : `<span class="small mute">${h(o.status)}</span>`}</td></tr>`; }).join('') || '<tr><td colspan="4" class="mute">Belum ada tawaran.</td></tr>'}</table></div>
+        <div class="row" style="margin-top:12px">${p.sale_by === 'admin' ? `<form data-f="pharga" data-id="${p.id}" class="row"><input class="i" name="price" inputmode="numeric" style="max-width:200px" value="${p.sale_price}"><button class="btn sm">Ubah harga</button></form>` : ''}
+        <button class="btn sm" data-a="padm" data-v="tarik" data-id="${p.id}">Tarik dari Pasar</button></div>`;
+    }
+    if (p.status === 'terjual') { const s = p.sale || {}, b = userById(s.buyer_id) || {};
+      act = lns([['Pembeli', `${h(b.full_name || '-')} (@${h(b.username || '-')}, ${h(b.phone || '-')})`], ['Harga jual', rp(s.price)], ['Utang gadai', rp(s.debt)], [s.shortfall ? 'Kekurangan' : 'Sisa ke penggadai', rp(s.shortfall || s.surplus)], ['Diterima', wkt(s.at)]])
+        + `<div class="note" style="margin-top:10px">${s.surplus ? `Transfer sisa ${rp(s.surplus)} ke ${h(bankStr(p.bank))}.` : 'Tidak ada sisa untuk penggadai.'}</div>
+        ${b.phone ? `<div class="row" style="margin-top:10px"><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${V.phoneNorm(b.phone).replace(/^0/, '62')}">WhatsApp pembeli</a></div>` : ''}`; }
+    if (p.status === 'ditebus') act = `<div class="note">Ditebus ${wkt(p.redeemed_at)} · ${rp(tb.amount)}. Kembalikan barang kepada penggadai.</div>`;
+    if (p.status === 'ditolak' || p.status === 'batal') act = `<div class="note">${PAWN_ST[p.status]}${p.admin_note ? ': ' + h(p.admin_note) : ''}</div>`;
+    modal(`${mh(`${h(p.title)} · G-${p.id}`)}<div class="row" style="margin-bottom:14px">${pawnPill(p)}<span class="small mute">${h(u.full_name || 'Akun terhapus')} · @${h(u.username)} · ${h(u.phone)} · diajukan ${wkt(p.created_at)}</span><button class="btn sm" data-a="auser" data-id="${p.user_id}">Profil</button></div>
+      ${act}<h3 style="margin-top:18px">Foto</h3>${pawnPhotos(p)}<h3 style="margin-top:18px">Data barang</h3>${lns([['Perkiraan nilai (penggadai)', rp(p.est_value)], ['Pinjaman diminta', rp(p.ask_amount)], ['Tenor diminta', p.tenor + ' bulan']])}${pawnInfo(p)}
+      <div class="row" style="margin-top:18px"><button class="btn sm bad" data-a="padm" data-v="hapus" data-id="${p.id}">Hapus data gadai</button></div>`, 'wide', draw);
+    fillThumbs();
+  };
+  draw();
 }
 
 // ---------- modal ----------
@@ -1129,6 +1377,7 @@ async function strukCanvas(l) {
   // kaki
   const code = await docCode(no + '|' + l.amount + '|' + l.status + '|' + tx.map(t => t.n + t.s).join(','));
   rule(H_ - 100, 1.2);
+  try { x.drawImage(await qrCanvas(), XR + 6, H_ - 100 - 84, 77, 77); } catch {}
   txt(`Dokumen elektronik ${APP}, sah tanpa tanda tangan basah. Kode verifikasi ${code}.`, ML, H_ - 66, { sz: 16, it: true, c: mute });
   txt(`Diterbitkan ${wkt(now)}`, ML, H_ - 40, { sz: 16, c: mute }); txt('Halaman 1 dari 1', XR, H_ - 40, { sz: 16, c: mute, al: 'right' });
   return c;
@@ -1169,7 +1418,7 @@ function thumbs(l) {
   return `<div class="thumbs">${['ktp', 'kk', 'sim', 'selfie', 'sign', 'cair'].filter(k => l.files[k]).map(k => { const f = fileById(l.files[k]);
     return `<div><div class="th" data-a="img" data-id="${l.files[k]}" data-thumb="${l.files[k]}"><img alt=""><span>${lab[k]}</span></div>
     ${f && f.meta && k === 'cair' ? `<div class="small mute" style="margin-top:4px">diunggah ${wkt(f.meta.at || f.created_at)}</div>` : ''}
-    ${f && f.meta && k !== 'sign' && k !== 'cair' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source === 'camera' ? ' · kamera' : k === 'selfie' ? ' · <span class="bad-t">' + h(f.meta.source || 'bukan kamera') + '</span>' : ' · file'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.meta.lat},${f.meta.lng}">Lihat peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
+    ${f && f.meta && k !== 'sign' && k !== 'cair' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source === 'camera' ? ' · kamera' : k === 'selfie' ? ' · <span class="bad-t">' + h(f.meta.source || 'bukan kamera') + '</span>' : ' · file'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${+f.meta.lat},${+f.meta.lng}">Lihat peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
 }
 function viewLoan(id) {
   const draw = () => {
@@ -1254,6 +1503,17 @@ function aUser(id) {
 }
 // ---------- mesin PDF dokumen resmi: kop + logo, margin 25/20 mm, Times, rata kiri-kanan, tiap butir/tabel utuh dalam satu halaman ----------
 const JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+// QR code di kanan bawah setiap halaman dokumen: dipindai → situs Amatusapa
+const QR_URL = 'http://amatusapa.github.io', QR_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+async function qrCanvas(px = 8) {
+  if (S.qr) return S.qr;
+  await loadScript(QR_LIB);
+  const q = window.qrcode(0, 'M'); q.addData(QR_URL); q.make();
+  const n = q.getModuleCount(), m = 2, c = document.createElement('canvas'), x = c.getContext('2d');
+  c.width = c.height = (n + m * 2) * px; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.fillStyle = '#000';
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect((k + m) * px, (r + m) * px, px, px);
+  return S.qr = c;
+}
 // font standar PDF hanya Latin-1: ganti tanda baca Unicode, buang emoji
 const pdfTxt = s => String(s ?? '').replace(/[—–]/g, '-').replace(/…/g, '...').replace(/→/g, '->').replace(/[✓✔]/g, 'v').replace(/[✗✘]/g, 'x')
   .replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/[^\x09\x0a\x0d\x20-\x7e\xa0-\xff]/g, '');
@@ -1282,7 +1542,7 @@ async function pdfKit() {
   await loadScript(JSPDF);
   const owner = Array.from(crypto.getRandomValues(new Uint8Array(16)), v => v.toString(16).padStart(2, '0')).join('');
   const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true, encryption: { userPassword: '', ownerPassword: owner, userPermissions: ['print'] } });
-  const logo = await logoPng().catch(() => null);
+  const logo = await logoPng().catch(() => null), qr = await qrCanvas().then(c => c.toDataURL('image/png')).catch(() => null);
   const INK = [17, 24, 39], MUTE = [90, 98, 112], LINE = [150, 156, 166], SOFT = [236, 239, 244];
   const K = { pdf, INK, MUTE, PW: 210, PH: 297, ML: 25, MR: 20, TOP: 29, BOT: 297 - 21, y: 45, tag: '', tags: {} };
   K.CW = K.PW - K.ML - K.MR; K.XR = K.PW - K.MR;
@@ -1400,6 +1660,7 @@ async function pdfKit() {
         pdf.setDrawColor(...LINE); pdf.setLineWidth(.3); pdf.line(K.ML, 20.5, K.XR, 20.5);
       }
       pdf.setDrawColor(...LINE); pdf.setLineWidth(.3); pdf.line(K.ML, K.PH - 15, K.XR, K.PH - 15);
+      if (qr) pdf.addImage(qr, 'PNG', K.XR + 1.5, K.PH - 28.5, 13, 13, 'qr');
       K.font(8.5); K.color(MUTE); pdf.text(pdfTxt(`Nomor ${o.no}${o.code ? '   |   Kode verifikasi ' + o.code : ''}`), K.ML, K.PH - 10.6);
       pdf.text(`Halaman ${i} dari ${n}`, K.XR, K.PH - 10.6, { align: 'right' });
       K.font(7.5, 'italic'); pdf.text(pdfTxt(`Dokumen elektronik ${APP}. Terkunci dari perubahan; setiap perubahan membatalkan kode verifikasi.`), K.ML, K.PH - 6.8);
@@ -1610,7 +1871,7 @@ document.addEventListener('click', async e => {
     case 'pay': payModal(id); break;
     case 'copy': e.preventDefault(); navigator.clipboard?.writeText(t.dataset.v).then(() => toast('Nomor rekening disalin'), () => toast(t.dataset.v)); break;
     case 'img': { e.preventDefault(); const lb = document.createElement('div'); lb.className = 'lb'; lb.innerHTML = '<span style="color:#fff">Memuat…</span>'; lb.onclick = () => lb.remove(); document.body.append(lb);
-      try { lb.innerHTML = `<img src="${await loadImg(id)}" alt="">`; } catch (er) { lb.innerHTML = '<span style="color:#fff">Gagal memuat</span>'; } break; }
+      try { const im = new Image(); im.alt = ''; im.src = await loadImg(id); lb.replaceChildren(im); } catch (er) { lb.innerHTML = '<span style="color:#fff">Gagal memuat</span>'; } break; }
     case 'print': perjanjianPdf(id); break;
     case 'struk': strukModal(id); break;
     case 'notif': Notification.requestPermission().then(p => { toast(p === 'granted' ? 'Notifikasi aktif' : 'Notifikasi ditolak browser'); render(); }); break;
@@ -1629,6 +1890,19 @@ document.addEventListener('click', async e => {
     case 'payok': { const p = S.d.payments.find(x => x.id === +id); await adm('pay_update', { id, status: 'ok' }, 'Pembayaran diterima'); autoPaid(p.loan_id); break; }
     case 'payno': adm('pay_update', { id, status: 'rejected' }, 'Pembayaran ditolak'); break;
     case 'paydel': if (await ask('Hapus catatan pembayaran ini?')) adm('pay_delete', { id }, 'Pembayaran dihapus'); break;
+    case 'pawnnew': pawnNewModal(); break;
+    case 'pawn': viewPawn(id); break;
+    case 'pawntebus': pawnTebusModal(id); break;
+    case 'pawnjual': pawnJualModal(id); break;
+    case 'pawnact': { const v = t.dataset.v, q = { batal: 'Batalkan / tolak gadai ini?', setuju: 'Setujui penawaran? Selanjutnya serahkan barang untuk pencairan.', tarik: 'Batalkan penjualan? Tawaran yang masuk akan ditolak.' }[v];
+      if (q && !(await ask(q))) break; await pawnRpc('md_pawn_act', { p_id: +id, p_action: v, p: {} }, { batal: 'Dibatalkan', setuju: 'Penawaran disetujui', tarik: 'Penjualan dibatalkan' }[v]); break; }
+    case 'mitem': marketItem(id); break;
+    case 'offerdel': if (await ask('Tarik tawaran Anda?')) await pawnRpc('md_offer', { p_pawn: +id, p_amount: 0, p_note: '' }, 'Tawaran ditarik'); break;
+    case 'pf': S.pf = t.dataset.v; render(); break;
+    case 'apawn': aPawn(id); break;
+    case 'padm': { const v = t.dataset.v, p = {}; const q = { tolak: 'Tolak pengajuan gadai ini?', tebus_ok: 'Terima tebusan? Barang dikembalikan ke penggadai.', tebus_no: 'Tolak bukti tebus ini?', tarik: 'Tarik barang dari Pasar? Tawaran aktif ditolak.', terima: 'Terima tawaran ini? Barang terjual dan tawaran lain ditolak.', hapus: 'Hapus data gadai beserta fotonya? Tidak bisa dibatalkan.' }[v];
+      if (q && !(await ask(q))) break; if (v === 'terima') p.offer_id = +t.dataset.o;
+      if (await pawnRpc('md_pawn_admin', { p_id: +id, p_action: v, p }, 'Tersimpan') && v === 'hapus') closeModal(); break; }
     case 'logclear': if (await ask('Hapus seluruh log aktivitas?')) adm('log_clear', {}, 'Log dihapus'); break;
   }
 });
@@ -1650,6 +1924,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.matches('input[type=file][data-k]')) fileShot(t);
+  if (t.id === 'pawn-photos') { const fs = [...t.files].slice(0, 6); $('#pawn-prev').replaceChildren(...fs.map(f => { const d = document.createElement('div'), im = new Image(); d.className = 'th'; im.src = URL.createObjectURL(f); d.append(im); return d; })); }
   if (t.name === 'bank_name' && t.form?.id === 'bankf') $('#bank-other').style.display = t.value === '__lain' ? '' : 'none';
   if (t.dataset.prev) { const p = document.getElementById(t.dataset.prev), f = t.files[0];
     p.style.display = f ? '' : 'none'; p.innerHTML = f ? `<img src="${URL.createObjectURL(f)}" alt="Pratinjau bukti transfer" style="object-fit:contain">` : ''; }
@@ -1713,6 +1988,36 @@ document.addEventListener('submit', async e => {
         if (await adm('loan_update', p, 'Pencairan tersimpan')) aLoan(l.id);
         break;
       }
+      case 'pawnnew': {
+        const fs = [...$('#pawn-photos').files];
+        if (fs.length < 2 || fs.length > 6) return fail('Lampirkan 2–6 foto barang');
+        const est = num(fd.est_value), askA = num(fd.ask_amount);
+        if (est < 100000) return fail('Perkiraan nilai minimal Rp100.000'); if (askA < 100000 || askA > est) return fail('Pinjaman diminta minimal Rp100.000 dan tidak melebihi nilai barang');
+        const ids = [];
+        for (const file of fs) { const up = await rpc('md_file_put', { p_token: S.token, p_kind: 'gadai', p_data: await imgToData(file), p_meta: { at: new Date().toISOString(), name: file.name.slice(0, 100), source: 'file' } }); if (!up.ok) return fail(up.err); ids.push(up.id); }
+        const r = await rpc('md_pawn_submit', { p_token: S.token, p: { category: fd.category, title: fd.title, brand: fd.brand, cond: fd.cond, year: digits(fd.year || ''), kelengkapan: fd.kelengkapan, spec: fd.spec, est_value: est, ask_amount: askA, tenor: +fd.tenor, photos: ids } });
+        if (!r.ok) return fail(r.err); closeModal(); S.tab = 'gadai'; LS.set('tab', 'gadai'); await refresh(true); toast('Pengajuan gadai terkirim'); break;
+      }
+      case 'pawntebus': {
+        const file = $('#tebus-file').files[0]; if (!file) return fail('Lampirkan bukti transfer');
+        const up = await rpc('md_file_put', { p_token: S.token, p_kind: 'bukti', p_data: await imgToData(file), p_meta: { at: new Date().toISOString(), name: file.name.slice(0, 100), pawn: +f.dataset.id } });
+        if (!up.ok) return fail(up.err);
+        const r = await rpc('md_pawn_act', { p_token: S.token, p_id: +f.dataset.id, p_action: 'tebus', p: { file: up.id, amount: num(fd.amount), note: fd.note || '' } });
+        if (!r.ok) return fail(r.err); toast('Bukti tebus terkirim'); await refresh(true); viewPawn(f.dataset.id); break;
+      }
+      case 'pawnjual': { const r = await rpc('md_pawn_act', { p_token: S.token, p_id: +f.dataset.id, p_action: 'jual', p: { price: num(fd.price) } }); if (!r.ok) return fail(r.err); toast('Barang tampil di Pasar'); await refresh(true); viewPawn(f.dataset.id); break; }
+      case 'offer': { if (num(fd.amount) < 50000) return fail('Nominal tawaran tidak valid'); const r = await rpc('md_offer', { p_token: S.token, p_pawn: +f.dataset.id, p_amount: num(fd.amount), p_note: fd.note || '' }); if (!r.ok) return fail(r.err); toast('Tawaran terkirim'); await refresh(true); break; }
+      case 'ptawar': { if (num(fd.amount) > num(fd.appraisal)) return fail('Pinjaman tidak boleh melebihi taksiran');
+        await pawnRpc('md_pawn_admin', { p_id: +f.dataset.id, p_action: 'tawar', p: { appraisal: num(fd.appraisal), amount: num(fd.amount), rate: +String(fd.rate).replace(',', '.'), tenor: +fd.tenor, note: fd.note || '' } }, 'Penawaran dikirim'); break; }
+      case 'pcair': {
+        const file = $('#pcair-file').files[0]; if (!LENDER[fd.lender]) return fail('Pilih rekening sumber'); if (!file) return fail('Lampirkan bukti transfer');
+        const p = pawnById(f.dataset.id);
+        const up = await rpc('md_file_put', { p_token: S.token, p_kind: 'cair', p_data: await imgToData(file), p_meta: { at: new Date().toISOString(), name: file.name.slice(0, 100), from: bankStr(LENDER[fd.lender]), to: bankStr(p.bank), pawn: p.id } });
+        if (!up.ok) return fail(up.err);
+        await pawnRpc('md_pawn_admin', { p_id: p.id, p_action: 'cair', p: { received: !!fd.received, lender: fd.lender, cair_file: up.id, cair_at: new Date((fd.cair_at || new Date().toISOString().slice(0, 10)) + 'T08:00').toISOString() } }, 'Dana gadai dicairkan'); break;
+      }
+      case 'pjual': await pawnRpc('md_pawn_admin', { p_id: +f.dataset.id, p_action: 'jual', p: { price: num(fd.price) } }, 'Barang tampil di Pasar'); break;
+      case 'pharga': await pawnRpc('md_pawn_admin', { p_id: +f.dataset.id, p_action: 'harga', p: { price: num(fd.price) } }, 'Harga diubah'); break;
       case 'payadd': { if (!num(fd.amount)) return fail('Isi nominal'); await adm('pay_add', { loan_id: +f.dataset.id, amount: num(fd.amount), paid_on: fd.paid_on }, 'Pembayaran dicatat'); autoPaid(+f.dataset.id); break; }
       case 'loanedit': await adm('loan_update', { id: f.dataset.id, amount: num(fd.amount), tenor: +fd.tenor, rate: +String(fd.rate).replace(',', '.'), late_rate: +String(fd.late_rate).replace(',', '.'), status: fd.status, approved_at: fd.approved_at ? new Date(fd.approved_at + 'T08:00').toISOString() : '', note: fd.note }, 'Pinjaman diperbarui'); break;
       case 'useredit': await adm('user_update', { id: f.dataset.id, ...fd, limit_override: fd.limit_override ? String(num(fd.limit_override)) : '' }, 'Data peminjam disimpan'); break;
