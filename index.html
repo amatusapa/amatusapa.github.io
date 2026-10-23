@@ -569,12 +569,12 @@ const nameOk = (holder, ktp) => !!normName(ktp) && normName(holder) === normName
 const bankOk = u => !!(u && u.bank_no && nameOk(u.bank_holder, u.full_name));
 const bankStr = b => b && b.bank_no ? `${b.bank_name} ${b.bank_no} a.n. ${b.bank_holder}` : '-';
 // rekening pemberi modal: sumber pencairan = tujuan pengembalian (wajib sama, dikunci di server md_pay)
-const LENDER = { mandiri: { bank_name: 'Mandiri', bank_no: '1850001426144', bank_holder: 'Liem, Yohanes Yulius Krisnawan' }, bca: { bank_name: 'BCA', bank_no: '3440523799', bank_holder: 'Liem, Yohanes Yulius Krisnawan' } };
+const LENDER = { mandiri: { bank_name: 'Mandiri', bank_no: '1850001426144', bank_holder: 'Y. Yulius Krisnawan' }, bca: { bank_name: 'BCA', bank_no: '3440523799', bank_holder: 'Liem, Yohanes Yulius Krisnawan' } };
 // identitas pemberi modal (PIHAK PERTAMA) — pemilik kedua rekening di atas
 const PEMODAL = { name: 'Liem, Yohanes Yulius Krisnawan',
   addr: 'Nambangan, Jl. Telaga Warna No. 31 RT/RW 005/018, Kelurahan Rejowinangun Utara, Kecamatan Magelang Tengah, Kota Magelang, Kode Pos 56127' };
-// data lama (perjanjian/pembayaran tersimpan) masih memuat nama alias rekening Mandiri → tampilkan satu nama saja
-const oneName = t => String(t ?? '').split('a.n. Y. Yulius Krisnawan').join('a.n. ' + PEMODAL.name);
+// perjanjian/pembayaran tersimpan: nama PIHAK PERTAMA tanpa keterangan alias; rekening Mandiri tetap a.n. Y. Yulius Krisnawan
+const oneName = t => String(t ?? '').replace(/\s*\([^()\n]*Y\.\s*Yulius Krisnawan[^()\n]*\)/g, '').split(`Mandiri ${LENDER.mandiri.bank_no} a.n. ${PEMODAL.name}`).join(bankStr(LENDER.mandiri));
 const pemodalBox = () => `<div class="note" style="margin-top:10px">Pemberi pinjaman: <b>${h(PEMODAL.name)}</b></div>`;
 const rekRow = (k, pick) => { const b = LENDER[k];
   return `<${pick ? 'label' : 'div'} class="rek">${pick ? `<input type="radio" name="${pick}" value="${k}" required>` : ''}<div><div class="small mute">${b.bank_name} · a.n. ${h(b.bank_holder)}</div><b class="mono">${b.bank_no}</b></div><button type="button" class="btn sm" data-a="copy" data-v="${b.bank_no}">Salin</button></${pick ? 'label' : 'div'}>`; };
