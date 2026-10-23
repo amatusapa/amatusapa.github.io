@@ -361,7 +361,7 @@ function vRules() {
   <li>Bunga ${RATE}% per bulan, tenor 1–3 bulan.</li>
   <li>Pelunasan awal: pokok + bunga bulan berjalan.</li>
   <li>Denda keterlambatan ${LATE}% per hari dari sisa pinjaman.</li>
-  <li>Dokumen: KTP, KK, SIM (jika ada), dan selfie dengan KTP.</li>
+  <li>Dokumen: KTP, KK, SIM, dan selfie dengan KTP.</li>
   <li>Rekening wajib atas nama peminjam sesuai KTP.</li>
   <li>Pengembalian ke rekening yang sama dengan pencairan.</li></ul></div>`;
 }
@@ -423,7 +423,7 @@ function statusPill(l, b) {
 function vUserHome() {
   const l = openLoan(), me = S.d.me;
   const hi = `<section class="hero glass"><div class="small mute">${h(me.full_name || me.username)}</div><div class="kl">Batas pinjaman</div><div class="big">${rp(S.d.limit)}</div></section>`;
-  if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="lead">Siapkan KTP, KK, SIM (jika ada), dan rekening atas nama sendiri.</p>
+  if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="lead">Siapkan KTP, KK, SIM, dan rekening atas nama sendiri.</p>
     <button class="btn pri wide" data-a="apply">Ajukan pinjaman</button></div>${vRules()}</div>`;
   if (l.status === 'pending') return hi + `<div class="card glass"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Pengajuan ${rp(l.amount)}</h2>${statusPill(l)}</div>
     <div class="stages"><div class="on"><b>Tahap 1</b>Diajukan<br><span class="small">${wkt(l.applied_at)}</span></div><div class="${l.verified_at ? 'on' : 'now'}"><b>Tahap 2</b>${l.verified_at ? 'Terverifikasi' : 'Verifikasi'}</div><div class="${l.verified_at ? 'now' : ''}"><b>Tahap 3</b>Pencairan</div></div>
@@ -742,10 +742,10 @@ function authModal(mode) {
 // ---------- pengajuan (wizard) ----------
 const W = { step: 0 };
 // KTP, KK & SIM boleh unggah file (scan / foto lama); selfie memegang KTP asli wajib kamera langsung + waktu & koordinat
-// kolom ke-5 = opsional (boleh dilewati)
+// kolom ke-5 = opsional (boleh dilewati); semua dokumen saat ini wajib
 const DOCS = [['ktp', 'Foto KTP', 'KTP asli, jelas dan utuh.', 'environment'],
   ['kk', 'Foto Kartu Keluarga', 'KK asli, seluruh halaman terbaca.', 'environment'],
-  ['sim', 'Foto SIM', 'Surat Izin Mengemudi (A / B / C) asli, nama dan foto terbaca. Lewati jika tidak punya SIM.', 'environment', true],
+  ['sim', 'Foto SIM', 'Surat Izin Mengemudi (A / B / C) asli, nama dan foto terbaca.', 'environment'],
   ['selfie', 'Selfie memegang KTP', 'Langsung dari kamera. Aktifkan izin lokasi.', 'user']];
 function identModal() {
   const me = S.d.me;
@@ -861,7 +861,7 @@ Pasal 6 — Pinjaman Berikutnya
 Setelah pinjaman ini lunas, PIHAK KEDUA dapat mengajukan pinjaman berikutnya hingga ${rpT(nextLimit(W.amt))}.
 
 Pasal 7 — Pernyataan PIHAK KEDUA
-(1) Seluruh data dan dokumen yang diserahkan, yaitu KTP, Kartu Keluarga, ${W.shots?.sim ? 'Surat Izin Mengemudi (SIM), ' : ''}dan swafoto memegang KTP dengan cap waktu dan lokasi, adalah benar dan sah.
+(1) Seluruh data dan dokumen yang diserahkan, yaitu KTP, Kartu Keluarga, Surat Izin Mengemudi (SIM), dan swafoto memegang KTP dengan cap waktu dan lokasi, adalah benar dan sah.
 (2) PIHAK KEDUA berusia sekurang-kurangnya 18 (delapan belas) tahun dan tidak berada di bawah pengampuan.
 (3) Keterangan yang tidak benar menjadi tanggung jawab PIHAK KEDUA dan dapat diproses sesuai ketentuan hukum yang berlaku.
 
