@@ -3,35 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Modalin</title>
-<meta name="description" content="Pinjaman modal untuk rekan dekat — simulasi, pengajuan, dan pembayaran.">
-<meta name="theme-color" content="#0e1a2b">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2338bdf8'/%3E%3Cstop offset='1' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23g)'/%3E%3Cpath d='M18 44V22l14 13 14-13v22' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<title>Amatusapa Cash</title>
+<meta name="description" content="Amatusapa Cash — pinjaman dana tunai, verifikasi 15 menit.">
+<meta name="theme-color" content="#0a1a31">
+<link rel="icon" id="fav" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#eef3fb; --ink:#0f1b2d; --mute:#5b6b82; --line:rgba(255,255,255,.65); --edge:rgba(15,27,45,.08);
-  --glass:rgba(255,255,255,.55); --glass2:rgba(255,255,255,.75); --solid:#ffffff;
-  --acc:#3b82f6; --acc2:#6366f1; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444;
-  --orb1:#7dd3fc; --orb2:#a5b4fc; --orb3:#f9a8d4; --shadow:0 10px 40px rgba(30,60,120,.12);
-  --r:22px;
+  --bg:#f3f5f9; --ink:#0f1b2d; --mute:#5b677a; --line:rgba(255,255,255,.7); --edge:rgba(15,27,45,.075);
+  --glass:rgba(255,255,255,.62); --glass2:rgba(255,255,255,.82); --solid:#ffffff;
+  --acc:#1f4e8c; --acc2:#14325c; --gold:#b98a2f; --ok:#0f8a5f; --warn:#c98a12; --bad:#c2410c;
+  --orb1:#c7d8f2; --orb2:#d9def0; --orb3:#efe3c4; --shadow:0 8px 30px rgba(20,40,80,.08);
+  --r:20px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#070d18; --ink:#e8eef8; --mute:#93a3bb; --line:rgba(255,255,255,.14); --edge:rgba(255,255,255,.06);
-  --glass:rgba(22,32,52,.5); --glass2:rgba(28,40,64,.72); --solid:#121c2e;
-  --orb1:#0ea5e9; --orb2:#4f46e5; --orb3:#be185d; --shadow:0 10px 40px rgba(0,0,0,.45);
+  --bg:#080e19; --ink:#e8edf5; --mute:#97a3b6; --line:rgba(255,255,255,.12); --edge:rgba(255,255,255,.06);
+  --glass:rgba(20,30,48,.55); --glass2:rgba(26,38,60,.78); --solid:#111a2b;
+  --acc:#4f7fd0; --acc2:#2f5aa8; --gold:#d8b267; --ok:#34c08b; --bad:#f07a4a;
+  --orb1:#132a4d; --orb2:#1b2550; --orb3:#3a2e14; --shadow:0 10px 36px rgba(0,0,0,.45);
 }}
 :root[data-theme="dark"]{
-  --bg:#070d18; --ink:#e8eef8; --mute:#93a3bb; --line:rgba(255,255,255,.14); --edge:rgba(255,255,255,.06);
-  --glass:rgba(22,32,52,.5); --glass2:rgba(28,40,64,.72); --solid:#121c2e;
-  --orb1:#0ea5e9; --orb2:#4f46e5; --orb3:#be185d; --shadow:0 10px 40px rgba(0,0,0,.45);
+  --bg:#080e19; --ink:#e8edf5; --mute:#97a3b6; --line:rgba(255,255,255,.12); --edge:rgba(255,255,255,.06);
+  --glass:rgba(20,30,48,.55); --glass2:rgba(26,38,60,.78); --solid:#111a2b;
+  --acc:#4f7fd0; --acc2:#2f5aa8; --gold:#d8b267; --ok:#34c08b; --bad:#f07a4a;
+  --orb1:#132a4d; --orb2:#1b2550; --orb3:#3a2e14; --shadow:0 10px 36px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:15px/1.5 "Plus Jakarta Sans",system-ui,-apple-system,sans-serif;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "Plus Jakarta Sans",system-ui,-apple-system,sans-serif;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+p{margin:0 0 12px;max-width:64ch}
 .orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.orbs i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.65;animation:float 22s ease-in-out infinite}
+.orbs i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;animation:float 30s ease-in-out infinite}
 .orbs i:nth-child(1){width:46vmax;height:46vmax;background:var(--orb1);left:-12vmax;top:-14vmax}
 .orbs i:nth-child(2){width:40vmax;height:40vmax;background:var(--orb2);right:-14vmax;top:18vh;animation-delay:-7s}
 .orbs i:nth-child(3){width:30vmax;height:30vmax;background:var(--orb3);left:20vw;bottom:-16vmax;animation-delay:-13s;opacity:.4}
@@ -41,13 +44,17 @@ body{background:var(--bg);color:var(--ink);font:15px/1.5 "Plus Jakarta Sans",sys
 #app{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:12px 16px 90px}
 header.top{position:sticky;top:10px;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:18px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.02em}
-.logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#38bdf8,#6366f1);display:grid;place-items:center;box-shadow:0 4px 14px rgba(99,102,241,.4)}
-.logo svg{width:20px;height:20px}
+.logo{width:36px;height:36px;flex:none;display:block}
+.logo svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 10px rgba(10,26,49,.22))}
+.wm{white-space:nowrap}.wm em{font-style:normal;font-weight:600;color:var(--gold);margin-left:.28em}
+.promo{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.01em;padding:7px 14px;border-radius:999px;color:var(--ink);background:color-mix(in srgb,var(--gold) 13%,transparent);border:1px solid color-mix(in srgb,var(--gold) 38%,transparent)}
+.promo::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 25%,transparent)}
+.lead{color:var(--mute);font-size:14px;line-height:1.65;margin:0 0 14px}
 .sp{flex:1}
 .btn{appearance:none;border:1px solid var(--line);background:var(--glass2);color:var(--ink);font:inherit;font-weight:600;padding:10px 16px;border-radius:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,background .2s;text-decoration:none;white-space:nowrap}
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:scale(.98)}
-.btn.pri{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-color:transparent;box-shadow:0 6px 20px rgba(79,70,229,.35)}
+.btn.pri{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-color:transparent;box-shadow:0 6px 18px rgba(20,50,92,.28)}
 .btn.ok{background:var(--ok);color:#fff;border-color:transparent}
 .btn.bad{background:transparent;color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
 .btn.sm{padding:6px 11px;font-size:13px;border-radius:11px}
@@ -119,7 +126,7 @@ input.i:focus,select.i:focus,textarea.i:focus{border-color:var(--acc);box-shadow
 @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}}
 .mh{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .mh h2{margin:0;flex:1}
-.x{border:0;background:var(--edge);width:34px;height:34px;border-radius:50%;cursor:pointer;color:var(--ink);font-size:18px}
+.x{border:0;background:var(--edge);width:34px;height:34px;border-radius:50%;cursor:pointer;color:var(--ink);display:grid;place-items:center;padding:0}.x svg{width:14px;height:14px}
 /* wizard */
 .steps{display:flex;gap:6px;margin-bottom:16px}
 .steps i{flex:1;height:5px;border-radius:9px;background:var(--edge)}
@@ -127,8 +134,20 @@ input.i:focus,select.i:focus,textarea.i:focus{border-color:var(--acc);box-shadow
 .shot{border-radius:18px;overflow:hidden;border:1px solid var(--line);background:var(--edge);aspect-ratio:4/3;display:grid;place-items:center;position:relative}
 .shot img{width:100%;height:100%;object-fit:cover;display:block}
 .shot .ph{text-align:center;color:var(--mute);padding:20px}
-.shot .ph b{display:block;font-size:34px;margin-bottom:6px}
-.agree{max-height:300px;overflow:auto;padding:14px;border-radius:14px;background:var(--solid);border:1px solid var(--edge);font-size:13px;white-space:pre-wrap;line-height:1.55}
+.shot .ph svg{display:block;width:40px;height:40px;margin:0 auto 8px;opacity:.55}
+.agree{max-height:340px;overflow:auto;padding:22px 24px;border-radius:14px;background:var(--solid);border:1px solid var(--edge)}
+/* dokumen formal (perjanjian) */
+.doc{font:14px/1.75 "Times New Roman",Tinos,Times,Georgia,serif;color:var(--ink);text-align:justify;hyphens:auto;-webkit-hyphens:auto}
+.doc.ro{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.doc .dt{text-align:center;font-weight:700;font-size:15.5px;letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px;margin:0 0 2px}
+.doc .dn{text-align:center;margin:0 0 16px;font-size:13px}
+.doc p{margin:0 0 10px;max-width:none}
+.doc h4{text-align:center;font-size:14px;margin:18px 0 6px;line-height:1.45}.doc h4 span{display:block;font-weight:700}
+.doc .ph{font-weight:700;margin:14px 0 4px}
+.doc table{font:inherit;margin:0 0 10px;width:100%}.doc td{border:0;padding:1px 6px 1px 0;vertical-align:top}.doc td:first-child{width:38%;white-space:nowrap}.doc td:nth-child(2){width:12px}
+@media (max-width:520px){.doc td:first-child{white-space:normal}}
+.doc .li{display:grid;grid-template-columns:30px 1fr;margin:0 0 6px}
+.doc-bar{display:flex;align-items:center;gap:10px;margin:0 0 12px}.doc-bar .logo{width:30px;height:30px}
 .sig{width:100%;height:160px;border-radius:14px;background:#fff;border:1px dashed #94a3b8;touch-action:none;display:block}
 .chk{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:14px}
 .chk input{width:20px;height:20px;margin-top:1px;accent-color:var(--acc)}
@@ -159,8 +178,8 @@ input.i:focus,select.i:focus,textarea.i:focus{border-color:var(--acc);box-shadow
 .th img{width:100%;height:100%;object-fit:cover}
 .badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--bad);color:#fff;font-size:12px;font-weight:800;vertical-align:middle}.badge.z{background:var(--edge);color:var(--mute)}
 .todo{padding:14px 16px;border-radius:18px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px}.chip.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.chip.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
-.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.stages div{padding:10px;border-radius:14px;background:var(--edge);font-size:12.5px;color:var(--mute)}.stages div.on{color:var(--ok);font-weight:700}.stages div.now{outline:2px solid var(--ok);color:inherit;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}.chip::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}.chip.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}.chip.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.stages div{padding:10px;border-radius:14px;background:var(--edge);font-size:12.5px;color:var(--mute)}.stages div.on{color:var(--ok);font-weight:700}.stages div b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-bottom:2px}.stages div.now{outline:2px solid var(--ok);color:inherit;font-weight:700}
 .rek{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--edge);margin-top:8px}
 .rek>div{flex:1;min-width:0}.rek b.mono{font:700 18px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5px}
 label.rek{cursor:pointer}label.rek input{width:18px;height:18px;flex:none}
@@ -171,14 +190,16 @@ label.rek{cursor:pointer}label.rek input{width:18px;height:18px;flex:none}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99;display:grid;gap:8px;width:min(92vw,420px)}
 #toast div{padding:12px 16px;border-radius:16px;font-weight:600;background:var(--glass2);border:1px solid var(--line);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:var(--shadow);animation:pop .2s}
 .gate{min-height:calc(100vh - 140px);display:flex;align-items:center;justify-content:center}
-.gate .card{width:min(100%,400px);padding:26px 22px}
-.gate .brand{justify-content:center;font-size:22px;margin-bottom:6px}
+.gate .card{width:min(100%,410px);padding:30px 26px 26px}
+.gate .brand{flex-direction:column;justify-content:center;font-size:23px;gap:12px;margin-bottom:12px}.gate .logo{width:64px;height:64px}
+.gate .promo{display:flex;justify-content:center;margin:0 auto 20px;width:fit-content}
 .wa{position:fixed;right:18px;bottom:18px;z-index:40;width:58px;height:58px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(37,211,102,.45);transition:transform .15s}
 .wa:hover{transform:scale(1.07)}.wa svg{width:32px;height:32px;fill:#fff}
-.foot{text-align:center;font-size:12px;color:var(--mute);margin-top:28px}
+.foot{text-align:center;font-size:12px;letter-spacing:.02em;color:var(--mute);margin-top:32px;opacity:.85}
 .prog{height:10px;border-radius:99px;background:var(--edge);overflow:hidden;margin:10px 0}
 .prog i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#34d399);border-radius:99px}
 .hide-sm{}
+.ok-t{color:var(--ok)}.bad-t{color:var(--bad)}
 @media (max-width:520px){.hide-sm{display:none}.card{padding:16px}.hero{padding:22px 18px}}
 @media print{.orbs,header.top,.tabs,.no-print{display:none!important}body{background:#fff;color:#000}}
 </style>
@@ -280,13 +301,13 @@ async function refresh(force) {
 // admin: jumlah tugas di judul tab + pemberitahuan saat ada pengajuan / bukti bayar baru
 function adminAlert() {
   const t = todo(), n = t.total, ids = new Set([...t.verif.map(l => 'l' + l.id), ...t.kirim.map(l => 'k' + l.id), ...t.bayar.map(p => 'p' + p.id)]);
-  document.title = n ? `(${n}) Modalin` : 'Modalin';
+  document.title = n ? `(${n}) ${APP}` : APP;
   const fresh = S.seen ? [...ids].filter(i => !S.seen.has(i) && i[0] !== 'k') : [];
   S.seen = ids;
   if (!fresh.length) return;
   const msg = `${fresh.filter(i => i[0] === 'l').length ? fresh.filter(i => i[0] === 'l').length + ' pengajuan baru' : ''}${fresh.some(i => i[0] === 'l') && fresh.some(i => i[0] === 'p') ? ' · ' : ''}${fresh.filter(i => i[0] === 'p').length ? fresh.filter(i => i[0] === 'p').length + ' bukti pengembalian' : ''} perlu ditindaklanjuti`;
-  toast('🔔 ' + msg, 5000);
-  try { if (window.Notification && Notification.permission === 'granted') new Notification('Modalin', { body: msg }); } catch {}
+  toast(msg, 5000);
+  try { if (window.Notification && Notification.permission === 'granted') new Notification(APP, { body: msg }); } catch {}
 }
 const busy = () => { const a = document.activeElement; return a && $('#app').contains(a) && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && a.type !== 'range'; };
 document.addEventListener('focusout', () => setTimeout(() => { if (S.dirty && !busy()) { S.dirty = false; render(); } }, 50));
@@ -294,46 +315,51 @@ setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 50
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && refresh());
 
 function logout(silent) {
-  document.title = 'Modalin'; S.seen = null;
+  document.title = APP; S.seen = null;
   if (!silent && S.token) rpc('md_logout', { p_token: S.token }).catch(() => {});
   S.token = null; S.d = null; S.rev = 0; LS.set('token', null); closeModal(); render();
 }
 
 // ---------- tampilan ----------
-const LOGO = `<div class="logo"><svg viewBox="0 0 24 24"><path d="M5 18V6l7 7 7-7v12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+// logo Amatusapa: huruf A dengan palang berupa koin kepeng (uang logam berlubang khas Nusantara) dalam bingkai segel
+const APP = 'Amatusapa Cash', PROMO = 'Hanya 15 menit verifikasi, pasti cair!';
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="lgN" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c3f72"/><stop offset="1" stop-color="#0a1a31"/></linearGradient><linearGradient id="lgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4da97"/><stop offset="1" stop-color="#c38f34"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#lgN)"/><rect x="4.2" y="4.2" width="55.6" height="55.6" rx="11.5" fill="none" stroke="#e3c47e" stroke-opacity=".45" stroke-width="1.1"/><path d="M18 48 32 15.5 46 48" fill="none" stroke="url(#lgG)" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 38.5h18" stroke="url(#lgG)" stroke-width="2.6"/><circle cx="32" cy="38.5" r="6" fill="url(#lgG)" stroke="#0a1a31" stroke-width="1.2"/><rect x="30.1" y="36.6" width="3.8" height="3.8" fill="#0a1a31"/></svg>`;
+const LOGO = `<span class="logo" aria-hidden="true">${LOGO_SVG}</span>`;
+const WM = `<span class="wm">Amatusapa<em>Cash</em></span>`;
+const ICO_X = `<svg viewBox="0 0 14 14"><path d="M2 2l10 10M12 2 2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+const ICO_DOC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14.5 10h4M14.5 13h3"/></svg>`;
 function render() {
   const app = $('#app');
-  const top = `<header class="top glass"><div class="brand">${LOGO}Modalin</div><div class="sp"></div>${S.d
+  const top = `<header class="top glass"><div class="brand">${LOGO}${WM}</div><div class="sp"></div>${S.d
     ? `<span class="small mute hide-sm">${h(S.d.me.full_name || S.d.me.username)}</span><button class="btn sm" data-a="logout">Keluar</button>`
     : ''}</header>`;
   let body;
   if (!S.d) body = S.token ? `<div class="gate"><div class="small mute">Memuat…</div></div>` : vGate();
   else if (isAdmin()) body = vAdmin();
   else body = vUser();
-  app.innerHTML = top + body + `<div class="foot">Modalin · pinjaman modal antar rekan · data tersimpan aman di server</div>`;
+  app.innerHTML = (S.d ? top : '') + body + `<div class="foot">© ${new Date().getFullYear()} ${APP}. Data Anda terlindungi.</div>`;
   paintRanges();
   fillThumbs();
 }
 
 function vGate() {
-  return `<div class="gate"><div class="card glass"><div class="brand">${LOGO}Modalin</div>
-  <div class="small mute" style="text-align:center;margin-bottom:18px">Masuk untuk melanjutkan</div>
+  return `<div class="gate"><div class="card glass"><div class="brand">${LOGO}${WM}</div>
+  <div class="promo">${PROMO}</div>
   <form data-f="login"><label class="f"><span>Username</span><input class="i" name="u" required autocapitalize="none" autocomplete="username"></label>
   <label class="f"><span>Password</span><input class="i" type="password" name="p" required autocomplete="current-password"></label><div class="err"></div>
   <button class="btn pri wide">Masuk</button></form>
-  <div class="small mute" style="text-align:center;margin-top:14px">Belum punya akun? <button type="button" class="btn sm" data-a="auth" data-m="reg" style="margin-left:6px">Daftar</button></div></div></div>`;
+  <div class="small mute" style="text-align:center;margin-top:16px">Belum punya akun? <button type="button" class="btn sm" data-a="auth" data-m="reg" style="margin-left:6px">Daftar</button></div></div></div>`;
 }
 
 function vRules() {
-  return `<div class="card glass"><h2>Ketentuan singkat</h2><ul class="rules">
-  <li>Pinjaman pertama <b>${rp(BASE)}</b>. Setelah lunas, batas berikutnya <b>+25%</b> dari pinjaman sebelumnya.</li>
-  <li>Bunga <b>${RATE}% per bulan</b> dari pokok, tenor 1–3 bulan (1 bulan = 30 hari).</li>
-  <li>Lunas sebelum jatuh tempo tetap membayar <b>pokok + bunga ${RATE}%</b> (bunga bulan berjalan).</li>
-  <li>Terlambat: denda <b>${LATE}% per hari</b> dari sisa pinjaman.</li>
-  <li>Syarat: foto/berkas KTP dan KK (boleh unggah file), selfie memegang KTP asli (wajib langsung dari kamera dengan waktu, lokasi &amp; koordinat), dan tanda tangan perjanjian.</li>
-  <li>Rekening penerima &amp; rekening pembayaran <b>wajib atas nama peminjam sesuai KTP</b>. Setiap pembayaran wajib melampirkan bukti transfer.</li>
-  <li>Dana dicairkan dari rekening pemberi modal <b>Mandiri</b> atau <b>BCA</b>. Pengembalian <b>wajib ke rekening yang sama</b> dengan pencairan, dari rekening penerima yang sama, lalu menunggu verifikasi.</li>
-  <li>Satu pinjaman berjalan dalam satu waktu.</li></ul></div>`;
+  return `<div class="card glass"><h2>Ketentuan</h2><ul class="rules">
+  <li>Pinjaman pertama ${rp(BASE)}; naik 25% setelah lunas.</li>
+  <li>Bunga ${RATE}% per bulan, tenor 1–3 bulan.</li>
+  <li>Pelunasan awal: pokok + bunga bulan berjalan.</li>
+  <li>Denda keterlambatan ${LATE}% per hari dari sisa pinjaman.</li>
+  <li>Dokumen: KTP, KK, dan selfie dengan KTP.</li>
+  <li>Rekening wajib atas nama peminjam sesuai KTP.</li>
+  <li>Pengembalian ke rekening yang sama dengan pencairan.</li></ul></div>`;
 }
 
 function vCalc(limit) {
@@ -350,24 +376,26 @@ function vCalc(limit) {
   <div class="small mute" style="margin:14px 0 6px">Tenor</div>
   <div class="seg">${[1, 2, 3].map(n => `<button data-a="tenor" data-v="${n}" class="${c.n === n ? 'on' : ''}">${n} bulan</button>`).join('')}</div>
   <div class="lines" id="c-lines">${calcLines(p)}</div>
-  <div class="note" id="c-early">Lunas lebih cepat dari jatuh tempo: tetap bayar <b>${rp(p.P + p.I)}</b> (pokok + bunga ${RATE}%)${p.n > 1 ? ' bila dalam bulan pertama' : ''}.</div>
+  <div class="note" id="c-early">${earlyNote(p)}</div>
   <div class="small mute" style="margin:16px 0 0">Simulasi terlambat: <b id="c-late">${c.late} hari</b></div>
   <input class="rng" type="range" id="r-late" min="0" max="30" step="1" value="${c.late}">
   <div class="note ${c.late ? 'bad' : ''}" id="c-latefee">${lateNote(p, c.late)}</div>
-  <div class="small mute" style="margin-top:12px" id="c-next">Lunas → pinjaman berikutnya hingga <b>${rp(nextLimit(c.amt))}</b></div></div>`;
+  <div class="small mute" style="margin-top:12px" id="c-next">${nextNote(c.amt)}</div></div>`;
 }
 const calcLines = p => `<div class="ln"><span>Bunga per bulan (${RATE}%)</span><b>${rp(p.I)}</b></div>
   <div class="ln"><span>Cicilan per bulan</span><b>${rp(p.inst)}</b></div>
   <div class="ln"><span>Total bunga</span><b>${rp(p.I * p.n)}</b></div>
   <div class="ln tot"><span>Total pengembalian</span><b>${rp(p.total)}</b></div>`;
-const lateNote = (p, d) => d ? `Denda ${d} hari × ${LATE}% × ${rp(p.total)} = <b>${rp(d * LATE / 100 * p.total)}</b> → total ${rp(p.total + d * LATE / 100 * p.total)}` : `Bayar tepat waktu: tanpa denda. Tiap hari terlambat +${LATE}% dari sisa pinjaman.`;
+const lateNote = (p, d) => d ? `Denda ${d} hari: <b>${rp(d * LATE / 100 * p.total)}</b>. Total menjadi ${rp(p.total + d * LATE / 100 * p.total)}.` : `Tepat waktu, tanpa denda.`;
+const earlyNote = p => `Pelunasan awal${p.n > 1 ? ' di bulan pertama' : ''}: <b>${rp(p.P + p.I)}</b>.`;
+const nextNote = a => `Setelah lunas, batas berikutnya <b>${rp(nextLimit(a))}</b>.`;
 function updCalc() {
   const c = S.calc, p = plan(c.amt, c.n);
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
   set('c-amt', rp(c.amt)); set('c-lines', calcLines(p)); set('c-late', c.late + ' hari');
-  set('c-early', `Lunas lebih cepat dari jatuh tempo: tetap bayar <b>${rp(p.P + p.I)}</b> (pokok + bunga ${RATE}%)${p.n > 1 ? ' bila dalam bulan pertama' : ''}.`);
+  set('c-early', earlyNote(p));
   const lf = document.getElementById('c-latefee'); if (lf) { lf.innerHTML = lateNote(p, c.late); lf.className = 'note ' + (c.late ? 'bad' : ''); }
-  set('c-next', `Lunas → pinjaman berikutnya hingga <b>${rp(nextLimit(c.amt))}</b>`);
+  set('c-next', nextNote(c.amt));
   paintRanges();
 }
 function paintRanges() { document.querySelectorAll('.rng').forEach(r => r.style.setProperty('--p', ((r.value - r.min) / (r.max - r.min || 1) * 100) + '%')); }
@@ -390,14 +418,14 @@ function statusPill(l, b) {
 }
 function vUserHome() {
   const l = openLoan(), me = S.d.me;
-  const hi = `<section class="hero glass" style="margin-bottom:16px"><div class="small mute">Halo,</div><h1 style="font-size:30px">${h(me.full_name || me.username)}</h1>
-    <div class="row"><div><div class="small mute">Batas pinjaman Anda</div><div class="big">${rp(S.d.limit)}</div></div></div></section>`;
-  if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="mute">Siapkan KTP dan KK asli (boleh unggah file). Selfie memegang KTP asli diambil langsung dari kamera, dengan waktu, lokasi &amp; koordinat otomatis.</p>
+  const hi = `<section class="hero glass" style="margin-bottom:16px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><div class="small mute">Selamat datang,</div><h1 style="font-size:28px">${h(me.full_name || me.username)}</h1></div><span class="promo">${PROMO}</span></div>
+    <div class="small mute" style="margin-top:6px">Batas pinjaman Anda</div><div class="big">${rp(S.d.limit)}</div></section>`;
+  if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="lead">Siapkan KTP, KK, dan rekening atas nama sendiri. Proses verifikasi 15 menit.</p>
     <button class="btn pri wide" data-a="apply">Ajukan pinjaman</button></div>${vRules()}</div>`;
   if (l.status === 'pending') return hi + `<div class="card glass"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Pengajuan ${rp(l.amount)}</h2>${statusPill(l)}</div>
-    <div class="stages"><div class="on">✓ Diajukan<br><span class="small">${wkt(l.applied_at)}</span></div><div class="${l.verified_at ? 'on' : 'now'}">${l.verified_at ? '✓ Diverifikasi admin' : '⏳ Menunggu verifikasi admin'}</div><div class="${l.verified_at ? 'now' : ''}">${l.verified_at ? '⏳ Menunggu pengiriman modal' : 'Pengiriman modal'}</div></div>
-    <p class="mute">Tenor ${l.tenor} bulan · dana ditransfer ke ${h(bankStr(l.bank))}. Bukti transfer akan muncul di sini setelah modal dikirim.</p>
-    <div class="row"><a class="btn sm pri" href="${WA_APPLY}" target="_blank" rel="noopener">Ajukan via WhatsApp</a><button class="btn sm" data-a="viewloan" data-id="${l.id}">Lihat detail</button><button class="btn sm bad" data-a="cancel" data-id="${l.id}">Batalkan pengajuan</button></div></div>`;
+    <div class="stages"><div class="on"><b>Tahap 1</b>Diajukan<br><span class="small">${wkt(l.applied_at)}</span></div><div class="${l.verified_at ? 'on' : 'now'}"><b>Tahap 2</b>${l.verified_at ? 'Terverifikasi' : 'Verifikasi'}</div><div class="${l.verified_at ? 'now' : ''}"><b>Tahap 3</b>Pencairan</div></div>
+    <p class="lead">Tenor ${l.tenor} bulan. Dana ditransfer ke ${h(bankStr(l.bank))}.</p>
+    <div class="row"><a class="btn sm pri" href="${WA_APPLY}" target="_blank" rel="noopener">Konfirmasi via WhatsApp</a><button class="btn sm" data-a="viewloan" data-id="${l.id}">Lihat detail</button><button class="btn sm bad" data-a="cancel" data-id="${l.id}">Batalkan pengajuan</button></div></div>`;
   return hi + vLoanCard(l);
 }
 function vLoanCard(l, admin) {
@@ -409,14 +437,14 @@ function vLoanCard(l, admin) {
     <div class="prog"><i style="width:${pct}%"></i></div>
     <div class="lines">
       <div class="ln"><span>Dicairkan</span><b>${tgl(l.approved_at)}</b></div>
-      <div class="ln"><span>Total kontrak (pokok + bunga ${+l.rate}%×${l.tenor})</span><b>${rp(b.contract)}</b></div>
-      ${b.denda ? `<div class="ln" style="color:var(--bad)"><span>Denda keterlambatan (${b.lateDays} hari × ${+l.late_rate}%)</span><b>${rp(b.denda)}</b></div>` : ''}
+      <div class="ln"><span>Total kontrak</span><b>${rp(b.contract)}</b></div>
+      ${b.denda ? `<div class="ln" style="color:var(--bad)"><span>Denda ${b.lateDays} hari</span><b>${rp(b.denda)}</b></div>` : ''}
       <div class="ln"><span>Sudah dibayar</span><b>${rp(b.paid)}</b></div>
       <div class="ln tot"><span>Pelunasan hari ini</span><b>${rp(b.payoff)}</b></div>
     </div>
-    ${b.overdue ? `<div class="note bad">Terlambat ${b.lateDays} hari. Denda bertambah ${+l.late_rate}% dari sisa pinjaman setiap hari.</div>` : `<div class="note">Lunas sekarang cukup bayar pokok + bunga bulan berjalan: <b>${rp(b.payoff)}</b>.</div>`}
-    ${pend.length ? `<div class="note warn" style="margin-top:10px">${pend.length} pengembalian menunggu verifikasi pemberi modal (${rp(pend.reduce((s, p) => s + +p.amount, 0))}).</div>` : ''}
-    ${l.status === 'active' && !admin ? `<div class="row" style="margin-top:14px"><button class="btn pri" data-a="pay" data-id="${l.id}">Konfirmasi pembayaran</button><button class="btn" data-a="viewloan" data-id="${l.id}">Detail &amp; perjanjian</button><button class="btn" data-a="struk" data-id="${l.id}">🧾 Struk</button></div>` : ''}
+    ${b.overdue ? `<div class="note bad">Terlambat ${b.lateDays} hari. Denda ${+l.late_rate}% per hari.</div>` : `<div class="note">Pelunasan hari ini: <b>${rp(b.payoff)}</b>.</div>`}
+    ${pend.length ? `<div class="note warn" style="margin-top:10px">${pend.length} pembayaran menunggu verifikasi (${rp(pend.reduce((s, p) => s + +p.amount, 0))}).</div>` : ''}
+    ${l.status === 'active' && !admin ? `<div class="row" style="margin-top:14px"><button class="btn pri" data-a="pay" data-id="${l.id}">Konfirmasi pembayaran</button><button class="btn" data-a="viewloan" data-id="${l.id}">Perjanjian</button><button class="btn" data-a="struk" data-id="${l.id}">Bukti transaksi</button></div>` : ''}
     ${payInfo(l, admin)}</div>
     <div class="card glass"><h2>Jadwal pembayaran</h2><div class="tbl"><table><tr><th>Ke</th><th>Jatuh tempo</th><th class="r">Tagihan</th></tr>
     ${b.dues.map(x => `<tr><td>${x.k}</td><td>${tgl(x.d)}</td><td class="r">${rp(x.amt)}</td></tr>`).join('')}</table></div>
@@ -427,13 +455,13 @@ function payInfo(l, admin) {
   const src = l.bank?.lender, f = l.files?.cair && fileById(l.files.cair);
   const cair = `<h3 style="margin-top:18px">Bukti pencairan dana</h3>${l.files?.cair
     ? `<div class="cairimg"><div class="th" data-a="img" data-id="${l.files.cair}" data-thumb="${l.files.cair}"><img alt="Bukti transfer pencairan"><span>Bukti</span></div>
-      <div class="small"><b>${rp(l.amount)}</b> ditransfer${src ? ` dari <b>${h(bankStr(LENDER[src]))}</b>` : ''}<br>ke ${h(bankStr(l.bank))}${f ? `<div class="mute">diunggah ${wkt(f.meta?.at || f.created_at)}</div>` : ''}<div class="mute">Ketuk gambar untuk memperbesar.</div></div></div>`
-    : `<div class="small mute">Bukti pencairan belum diunggah pemberi modal.</div>`}`;
+      <div class="small"><b>${rp(l.amount)}</b> ditransfer${src ? ` dari <b>${h(bankStr(LENDER[src]))}</b>` : ''}<br>ke ${h(bankStr(l.bank))}${f ? `<div class="mute">${wkt(f.meta?.at || f.created_at)}</div>` : ''}</div></div>`
+    : `<div class="small mute">Belum tersedia.</div>`}`;
   if (admin) return cair;
   return cair + `<h3 style="margin-top:18px">Pengembalian pinjaman</h3>
-    <p class="small mute" style="margin:0">${src ? 'Transfer pengembalian <b>wajib ke rekening yang sama</b> dengan pencairan:' : 'Pilih salah satu rekening di bawah. Setelah pembayaran pertama, rekening tujuan terkunci — semua pengembalian berikutnya wajib ke rekening yang sama.'}</p>
+    <p class="small mute" style="margin:0">${src ? 'Transfer ke rekening pencairan berikut:' : 'Pilih satu rekening; pembayaran berikutnya ke rekening yang sama.'}</p>
     ${src ? rekRow(src) : rekRow('mandiri') + rekRow('bca')}${pemodalBox()}
-    <div class="note" style="margin-top:10px">Transfer <b>dari rekening penerima dana</b>: ${h(bankStr(l.bank?.bank_no ? l.bank : S.d.me))}. Setelah transfer, tekan <b>Konfirmasi pembayaran</b> dan unggah foto bukti transfer — status <b>Menunggu verifikasi</b> sampai diterima pemberi modal.</div>`;
+    <div class="note" style="margin-top:10px">Kirim dari ${h(bankStr(l.bank?.bank_no ? l.bank : S.d.me))}, lalu unggah bukti transfer.</div>`;
 }
 function payTable(l, admin) {
   const ps = S.d.payments.filter(p => p.loan_id === l.id);
@@ -518,7 +546,7 @@ const V = {
       || (String(fd.spouse_name || '').trim() && [normName(fd.full_name), normName(fd.mother_name)].includes(normName(fd.spouse_name)) ? 'Nama istri / suami tidak wajar' : '')
       || (!/^[a-z0-9._-]{3,32}$/.test(u) ? 'Username 3–32 karakter: huruf kecil, angka, titik, - atau _' : '')
       || (pw.length < 6 ? 'Password minimal 6 karakter' : '')
-      || (pw.toLowerCase() === u || ['123456', '1234567', '12345678', '123456789', 'password', 'qwerty', '111111', '000000', 'abcdef', 'abc123', 'modalin'].includes(pw.toLowerCase()) ? 'Password terlalu mudah ditebak' : '');
+      || (pw.toLowerCase() === u || ['123456', '1234567', '12345678', '123456789', 'password', 'qwerty', '111111', '000000', 'abcdef', 'abc123', 'modalin', 'amatusapa'].includes(pw.toLowerCase()) ? 'Password terlalu mudah ditebak' : '');
   },
 };
 // info yang terbaca dari NIK, ditampilkan saat mengetik agar peminjam melihat kecocokannya
@@ -526,7 +554,7 @@ function nikHint(v, bd) {
   const n = digits(v); if (n.length < 12) return '<span class="mute">16 angka sesuai KTP</span>';
   let d = +n.slice(6, 8); const fem = d > 40; if (fem) d -= 40;
   const e = n.length === 16 ? V.nik(n, bd) : '';
-  return `<span style="color:var(${e ? '--bad' : '--ok'})">${e ? '✗ ' + h(e) : '✓'} · lahir ${String(d).padStart(2, '0')}-${n.slice(8, 10)}-${n.slice(10, 12)} · ${fem ? 'perempuan' : 'laki-laki'}</span>`;
+  return `<span class="${e ? 'bad-t' : 'ok-t'}">${e ? h(e) : `Sesuai. Lahir ${String(d).padStart(2, '0')}-${n.slice(8, 10)}-${n.slice(10, 12)}, ${fem ? 'perempuan' : 'laki-laki'}`}</span>`;
 }
 const ID_F = [['nik', 'NIK'], ['kk_no', 'Nomor KK']];
 const FIELDS = [['full_name', 'Nama lengkap (sesuai KTP)'], ['address', 'Alamat (sesuai KTP)'], ['birth_place', 'Tempat lahir'], ['birth_date', 'Tanggal lahir'], ['spouse_name', 'Nama istri / suami'], ['mother_name', 'Nama ibu kandung'], ['phone', 'Nomor telepon']];
@@ -542,7 +570,7 @@ const LENDER = { mandiri: { bank_name: 'Mandiri', bank_no: '1850001426144', bank
 // identitas pemberi modal (PIHAK PERTAMA) — pemilik kedua rekening di atas
 const PEMODAL = { name: 'Liem, Yohanes Yulius Krisnawan', alias: 'Y. Yulius Krisnawan',
   addr: 'Nambangan, Jl. Telaga Warna No. 31 RT/RW 005/018, Kelurahan Rejowinangun Utara, Kecamatan Magelang Tengah, Kota Magelang, Kode Pos 56127' };
-const pemodalBox = () => `<div class="note" style="margin-top:10px"><b>Pemberi modal:</b> ${h(PEMODAL.name)} (rekening Mandiri a.n. ${h(PEMODAL.alias)})<div class="small mute">${h(PEMODAL.addr)}</div></div>`;
+const pemodalBox = () => `<div class="note" style="margin-top:10px">Pemberi pinjaman: <b>${h(PEMODAL.name)}</b></div>`;
 const rekRow = (k, pick) => { const b = LENDER[k];
   return `<${pick ? 'label' : 'div'} class="rek">${pick ? `<input type="radio" name="${pick}" value="${k}" required>` : ''}<div><div class="small mute">${b.bank_name} · a.n. ${h(b.bank_holder)}</div><b class="mono">${b.bank_no}</b></div><button type="button" class="btn sm" data-a="copy" data-v="${b.bank_no}">Salin</button></${pick ? 'label' : 'div'}>`; };
 function bankForm(me, then = '') {
@@ -553,16 +581,16 @@ function bankForm(me, then = '') {
     <label class="f" id="bank-other" style="${other ? '' : 'display:none'}"><span>Nama bank</span><input class="i" name="bank_other" value="${other ? h(bn) : ''}"></label>
     <label class="f"><span>Nama pemilik rekening</span><input class="i" name="bank_holder" id="bank-holder" required value="${h(me.bank_holder || me.full_name || '')}" autocomplete="off"></label>
     <div class="small" id="bank-match" style="margin:-4px 0 10px">${holderNote(me.bank_holder || me.full_name, me.full_name)}</div>
-    <div class="note" style="margin-bottom:10px">Rekening harus <b>atas nama Anda sendiri, sama dengan nama di KTP</b> (${h(me.full_name)}). Dana hanya dicairkan ke rekening ini dan pembayaran harus ditransfer dari rekening ini.</div>
+    <div class="note" style="margin-bottom:10px">Rekening wajib atas nama ${h(me.full_name)} sesuai KTP.</div>
     <div class="err"></div>${then === 'wiz' ? '' : `<button class="btn pri">Simpan rekening</button>`}</form>`;
 }
-const holderNote = (v, ktp) => nameOk(v, ktp) ? `<span style="color:var(--ok)">✓ Sesuai nama KTP</span>` : `<span style="color:var(--bad)">✗ Harus sama dengan nama KTP: ${h(ktp)}</span>`;
+const holderNote = (v, ktp) => nameOk(v, ktp) ? `<span class="ok-t">Sesuai nama KTP</span>` : `<span class="bad-t">Harus sama dengan nama KTP: ${h(ktp)}</span>`;
 function vProfile() {
   const me = S.d.me;
   return `<div class="grid g2"><div class="card glass"><h2>Data diri</h2><div class="lines">
     <div class="ln"><span>Username</span><b>${h(me.username)}</b></div>
     ${ID_F.concat(FIELDS).map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(k === 'birth_date' ? tgl(me[k]) : me[k] || '-')}</b></div>`).join('')}</div>
-    <div class="small mute">Perubahan data diri dilakukan oleh admin.</div></div>
+    <div class="small mute">Perubahan data melalui admin.</div></div>
     <div class="card glass"><h2>Rekening Anda</h2>${bankOk(me) ? `<div class="note" style="margin-bottom:12px">Terdaftar: <b>${h(bankStr(me))}</b></div>` : ''}${bankForm(me)}</div>
     <div class="card glass"><h2>Ganti password</h2><form data-f="pass"><label class="f"><span>Password lama</span><input class="i" type="password" name="old" required autocomplete="current-password"></label>
     <label class="f"><span>Password baru</span><input class="i" type="password" name="new" minlength="6" required autocomplete="new-password"></label><div class="err"></div>
@@ -591,9 +619,10 @@ function autoChecks(l, u) {
   const b = loanBank(l, u), docs = ['ktp', 'kk', 'selfie'].map(k => fileById(l.files?.[k])).filter(Boolean);
   return [['NIK cocok tanggal lahir', !V.nik(u.nik, u.birth_date)], ['Nomor KK valid', !V.kk(u.kk_no)],
     ['Rekening a.n. sesuai KTP', !!(b.bank_no && nameOk(b.bank_holder, u.full_name))], ['Nomor rekening wajar', !!b.bank_no && !V.bankNo(b.bank_name, b.bank_no)],
-    ['KTP & KK terunggah', !!(l.files?.ktp && l.files?.kk)], ['Selfie kamera + lokasi', (f => !!f?.meta && f.meta.lat != null && f.meta.source === 'camera')(fileById(l.files?.selfie))], ['Tanda tangan ada', !!l.files?.sign]];
+    ['KTP & KK terunggah', !!(l.files?.ktp && l.files?.kk)], ['Selfie kamera + lokasi', (f => !!f?.meta && f.meta.lat != null && f.meta.source === 'camera')(fileById(l.files?.selfie))], ['Tanda tangan ada', !!l.files?.sign],
+    ['Perjanjian sesuai data', !!l.agreement && l.agreement.includes(rp(l.amount)) && (!u.nik || l.agreement.includes(u.nik))]];
 }
-const chips = cs => `<div class="chips">${cs.map(([t, ok]) => `<span class="chip ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'} ${t}</span>`).join('')}</div>`;
+const chips = cs => `<div class="chips">${cs.map(([t, ok]) => `<span class="chip ${ok ? 'ok' : 'bad'}">${t}</span>`).join('')}</div>`;
 function todoLoan(l, stage) {
   const u = userById(l.user_id) || {}, b = loanBank(l, u);
   return `<div class="todo glass"><div class="row" style="justify-content:space-between;align-items:flex-start">
@@ -601,8 +630,8 @@ function todoLoan(l, stage) {
     <div class="small mute">NIK ${h(u.nik || '-')} · ${h(u.phone || '-')}</div></div><div class="big" style="font-size:22px">${rp(l.amount)}<div class="small mute" style="text-align:right">${l.tenor} bln</div></div></div>
     ${stage === 'verif' ? chips(autoChecks(l, u)) : `<div class="note" style="margin:10px 0">Transfer ke: <b>${h(bankStr(b))}</b><div class="small mute">Diverifikasi ${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + h(l.verify.by) : ''}</div></div>`}
     <div class="row" style="margin-top:10px">${stage === 'verif'
-      ? `<button class="btn pri sm" data-a="aloan" data-id="${l.id}">Periksa &amp; verifikasi</button><button class="btn sm bad" data-a="reject" data-id="${l.id}">Tolak</button>`
-      : `<button class="btn ok sm" data-a="approve" data-id="${l.id}">Kirim modal &amp; unggah bukti</button><button class="btn sm" data-a="aloan" data-id="${l.id}">Detail</button><button class="btn sm bad" data-a="reject" data-id="${l.id}">Tolak</button>`}
+      ? `<button class="btn pri sm" data-a="aloan" data-id="${l.id}">Periksa</button><button class="btn sm bad" data-a="reject" data-id="${l.id}">Tolak</button>`
+      : `<button class="btn ok sm" data-a="approve" data-id="${l.id}">Cairkan dana</button><button class="btn sm" data-a="aloan" data-id="${l.id}">Detail</button><button class="btn sm bad" data-a="reject" data-id="${l.id}">Tolak</button>`}
     ${u.phone ? `<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${V.phoneNorm(u.phone).replace(/^0/, '62')}">WhatsApp</a>` : ''}</div></div>`;
 }
 function todoPay(p) {
@@ -616,13 +645,13 @@ function todoPay(p) {
 }
 function vATodo() {
   const t = todo(), sec = (no, title, desc, items) => `<section class="card glass" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${no} · ${title}</h2><span class="badge ${items.length ? '' : 'z'}">${items.length}</span></div>
-    <p class="small mute" style="margin:4px 0 12px">${desc}</p><div class="list">${items.join('') || '<div class="small mute">Tidak ada. 👍</div>'}</div></section>`;
-  const notif = window.Notification && Notification.permission !== 'granted' ? `<div class="row" style="margin-bottom:12px"><button class="btn sm" data-a="notif">🔔 Aktifkan notifikasi desktop</button><span class="small mute">Pemberitahuan saat ada pengajuan / bukti bayar baru (halaman admin harus terbuka).</span></div>` : '';
-  return notif + sec(1, 'Verifikasi pengajuan', 'Pengajuan baru dari peminjam. Periksa NIK, foto KTP/KK/selfie, dan rekening, lalu verifikasi atau tolak.', t.verif.map(l => todoLoan(l, 'verif')))
-    + sec(2, 'Kirim modal', 'Sudah diverifikasi. Transfer dana ke rekening peminjam dari Mandiri / BCA, lalu unggah bukti transfer — pinjaman mulai berjalan.', t.kirim.map(l => todoLoan(l, 'kirim')))
-    + sec(3, 'Verifikasi pengembalian', 'Bukti transfer pengembalian dari peminjam. Cocokkan dengan mutasi rekening, lalu terima atau tolak.', t.bayar.map(todoPay))
-    + (t.late.length ? sec('!', 'Terlambat bayar', 'Pinjaman lewat jatuh tempo — hubungi peminjam.', t.late.map(loanRow)) : '')
-    + (t.baru.length ? sec('i', 'Peminjam baru (7 hari)', 'Sudah daftar, belum mengajukan pinjaman.', t.baru.map(u => `<div class="item glass" data-a="auser" data-id="${u.id}"><div class="av">${h((u.full_name || u.username)[0].toUpperCase())}</div><div class="grow"><b>${h(u.full_name)}</b><div class="small mute">@${h(u.username)} · ${h(u.phone)} · daftar ${wkt(u.created_at)}</div></div></div>`)) : '');
+    <p class="small mute" style="margin:4px 0 12px">${desc}</p><div class="list">${items.join('') || '<div class="small mute">Tidak ada antrean.</div>'}</div></section>`;
+  const notif = window.Notification && Notification.permission !== 'granted' ? `<div class="row" style="margin-bottom:12px"><button class="btn sm" data-a="notif">Aktifkan notifikasi</button></div>` : '';
+  return notif + sec(1, 'Verifikasi pengajuan', 'Periksa data, dokumen, dan rekening.', t.verif.map(l => todoLoan(l, 'verif')))
+    + sec(2, 'Pencairan dana', 'Transfer dana, lalu unggah bukti.', t.kirim.map(l => todoLoan(l, 'kirim')))
+    + sec(3, 'Verifikasi pengembalian', 'Cocokkan bukti dengan mutasi rekening.', t.bayar.map(todoPay))
+    + (t.late.length ? sec(4, 'Terlambat bayar', 'Lewat jatuh tempo.', t.late.map(loanRow)) : '')
+    + (t.baru.length ? sec(5, 'Peminjam baru', 'Terdaftar 7 hari terakhir, belum mengajukan.', t.baru.map(u => `<div class="item glass" data-a="auser" data-id="${u.id}"><div class="av">${h((u.full_name || u.username)[0].toUpperCase())}</div><div class="grow"><b>${h(u.full_name)}</b><div class="small mute">@${h(u.username)} · ${h(u.phone)} · daftar ${wkt(u.created_at)}</div></div></div>`)) : '');
 }
 function loanRow(l) {
   const u = userById(l.user_id) || {}, b = l.status === 'active' ? bill(l, S.d.payments) : null;
@@ -640,7 +669,7 @@ function vASum() {
     <div class="kpi glass"><span>Sisa tagihan</span><b>${rp(out)}</b></div><div class="kpi glass"><span>Terlambat</span><b style="color:${late.length ? 'var(--bad)' : 'inherit'}">${late.length}</b></div>
     <div class="kpi glass"><span>Total dicairkan</span><b>${rp(lent)}</b></div><div class="kpi glass"><span>Total diterima</span><b>${rp(earned)}</b></div>
     <div class="kpi glass"><span>Peminjam</span><b>${S.d.users.length}</b></div><div class="kpi glass"><span>Bayar perlu dicek</span><b>${payPend.length}</b></div></div>
-    <div class="grid g2"><div class="card glass"><h2>Perlu tindakan</h2><div class="list">${[...pend, ...late.map(x => x.l), ...L.filter(l => payPend.some(p => p.loan_id === l.id) && !pend.includes(l) && !late.some(x => x.l === l))].map(loanRow).join('') || '<div class="mute">Tidak ada. 👍</div>'}</div></div>
+    <div class="grid g2"><div class="card glass"><h2>Perlu tindakan</h2><div class="list">${[...pend, ...late.map(x => x.l), ...L.filter(l => payPend.some(p => p.loan_id === l.id) && !pend.includes(l) && !late.some(x => x.l === l))].map(loanRow).join('') || '<div class="mute">Tidak ada antrean.</div>'}</div></div>
     <div class="card glass"><h2>Aktivitas terbaru</h2>${logTable(S.d.log.slice(0, 12))}</div></div>`;
 }
 function vALoans() {
@@ -654,7 +683,7 @@ function vALoans() {
 }
 function vAUsers() {
   const q = S.q.toLowerCase(), U = S.d.users.filter(u => !q || JSON.stringify(u).toLowerCase().includes(q));
-  return `<div class="row" style="margin-bottom:12px"><input class="i" id="q" placeholder="Cari peminjam…" value="${h(S.q)}" style="max-width:320px"><button class="btn sm" data-a="jaminan-all" ${S.d.users.length ? '' : 'disabled'}>📄 Berkas jaminan semua peminjam (PDF)</button></div>
+  return `<div class="row" style="margin-bottom:12px"><input class="i" id="q" placeholder="Cari peminjam…" value="${h(S.q)}" style="max-width:320px"><button class="btn sm" data-a="jaminan-all" ${S.d.users.length ? '' : 'disabled'}>Berkas jaminan semua (PDF)</button></div>
     <div class="list">${U.map(u => { const ls = S.d.loans.filter(l => l.user_id === u.id); return `<div class="item glass" data-a="auser" data-id="${u.id}"><div class="av">${h((u.full_name || u.username)[0].toUpperCase())}</div>
     <div class="grow"><b class="ell" style="display:block">${h(u.full_name)} <span class="small mute">@${h(u.username)}</span></b><div class="small mute ell">${h(u.phone)} · ${ls.length} pinjaman · batas ${rp(u.limit)}</div></div>
     ${u.active ? '' : '<span class="pill rejected">Nonaktif</span>'}</div>`; }).join('') || '<div class="card glass mute">Belum ada peminjam.</div>'}</div>`;
@@ -669,10 +698,10 @@ function vALog() {
 function vASet() {
   const s = S.d.settings || {};
   return `<div class="grid g2"><div class="card glass"><h2>Pengaturan</h2><form data-f="set">
-    <div class="note" style="margin-bottom:12px">Pemberi modal di perjanjian &amp; struk: <b>${h(PEMODAL.name)}</b><div class="small mute">${h(PEMODAL.addr)}</div><div class="small">${h(bankStr(LENDER.mandiri))}<br>${h(bankStr(LENDER.bca))}</div></div>
+    <div class="note" style="margin-bottom:12px">Pemberi pinjaman: <b>${h(PEMODAL.name)}</b><div class="small mute">${h(PEMODAL.addr)}</div><div class="small">${h(bankStr(LENDER.mandiri))}<br>${h(bankStr(LENDER.bca))}</div></div>
     <label class="f"><span>Nomor WhatsApp konfirmasi</span><input class="i" name="wa" value="${h(s.wa || '')}"></label>
     <button class="btn pri">Simpan</button></form></div>
-    <div class="card glass"><h2>Akun admin</h2><p class="mute small">Admin dapat melihat semua aktivitas, menyetujui, mengubah, dan menghapus data.</p>
+    <div class="card glass"><h2>Akun admin</h2><p class="mute small">Akses penuh atas seluruh data.</p>
     <button class="btn sm" data-a="theme">Tema: ${{ auto: 'Otomatis', light: 'Terang', dark: 'Gelap' }[LS.get('theme') || 'auto']}</button></div></div>`;
 }
 
@@ -683,7 +712,7 @@ function modal(html, cls = '', onRefresh = null) {
   $('#modal').innerHTML = `<div class="mask" data-a="maskclose"><div class="modal glass ${cls}" role="dialog">${html}</div></div>`;
 }
 function closeModal() { $('#modal').innerHTML = ''; M.refresh = null; stopCam(); if (S.dirty) { S.dirty = false; render(); } }
-const mh = t => `<div class="mh"><h2>${t}</h2><button class="x" data-a="close" aria-label="Tutup">×</button></div>`;
+const mh = t => `<div class="mh"><h2>${t}</h2><button class="x" data-a="close" aria-label="Tutup">${ICO_X}</button></div>`;
 
 function authModal(mode) {
   const reg = mode === 'reg';
@@ -699,8 +728,7 @@ function authModal(mode) {
     <label class="f"><span>Nomor telepon / WhatsApp</span><input class="i" name="phone" type="tel" inputmode="tel" required autocomplete="tel"></label>
     <div class="f2"><label class="f"><span>Username</span><input class="i" name="username" required pattern="[a-zA-Z0-9._\\-]{3,32}" autocapitalize="none" autocomplete="username"></label>
     <label class="f"><span>Password</span><input class="i" type="password" name="password" minlength="6" required autocomplete="new-password"></label></div>
-    <div class="small mute" style="margin:-4px 0 8px">Simpan username &amp; password untuk pinjaman berikutnya.</div>
-    <div class="note" style="margin-bottom:10px">Data diperiksa otomatis: NIK harus cocok dengan tanggal lahir, nomor HP Indonesia aktif, nama sesuai KTP. Data yang dikarang atau tidak sesuai <b>ditolak</b>.</div>
+    <div class="note" style="margin-bottom:10px">Isi sesuai KTP. Data diverifikasi otomatis.</div>
     <div class="err"></div><button class="btn pri wide">Daftar &amp; masuk</button></form>`
   : `<form data-f="login"><label class="f"><span>Username</span><input class="i" name="u" required autocapitalize="none" autocomplete="username"></label>
     <label class="f"><span>Password</span><input class="i" type="password" name="p" required autocomplete="current-password"></label><div class="err"></div>
@@ -711,16 +739,16 @@ function authModal(mode) {
 // ---------- pengajuan (wizard) ----------
 const W = { step: 0 };
 // KTP & KK boleh unggah file (scan / foto lama); selfie memegang KTP asli wajib kamera langsung + waktu & koordinat
-const DOCS = [['ktp', 'Foto KTP', 'Unggah foto / scan KTP asli — seluruh sisi terlihat jelas dan tidak buram. Boleh dari galeri atau file.', 'environment'],
-  ['kk', 'Foto Kartu Keluarga', 'Unggah foto / scan KK asli — seluruh halaman terbaca. Boleh dari galeri atau file.', 'environment'],
-  ['selfie', 'Selfie memegang KTP asli', 'Wajib foto langsung dari kamera (tidak bisa unggah file), wajah dan KTP asli terlihat jelas. Waktu, lokasi, dan koordinat dicetak otomatis — aktifkan izin lokasi.', 'user']];
+const DOCS = [['ktp', 'Foto KTP', 'KTP asli, jelas dan utuh.', 'environment'],
+  ['kk', 'Foto Kartu Keluarga', 'KK asli, seluruh halaman terbaca.', 'environment'],
+  ['selfie', 'Selfie memegang KTP', 'Langsung dari kamera. Aktifkan izin lokasi.', 'user']];
 function identModal() {
   const me = S.d.me;
-  modal(`${mh('Lengkapi data KTP')}<p class="mute small">Sebelum mengajukan, isi NIK dan Nomor KK sesuai dokumen asli. NIK harus cocok dengan tanggal lahir Anda (${tgl(me.birth_date)}).</p>
+  modal(`${mh('Lengkapi data KTP')}<p class="lead">Isi NIK dan Nomor KK sesuai dokumen asli.</p>
     <form data-f="ident"><label class="f"><span>NIK (16 angka)</span><input class="i" name="nik" inputmode="numeric" maxlength="16" required autocomplete="off"></label>
     <div class="small" id="nik-hint" style="margin:-4px 0 10px">${nikHint('')}</div>
     <label class="f"><span>Nomor Kartu Keluarga (16 angka)</span><input class="i" name="kk_no" inputmode="numeric" maxlength="16" required autocomplete="off"></label>
-    <div class="note" style="margin-bottom:10px">NIK hanya bisa diisi sekali. Perubahan berikutnya melalui admin.</div>
+    <div class="note" style="margin-bottom:10px">Hanya dapat diisi sekali.</div>
     <div class="err"></div><button class="btn pri wide">Simpan &amp; lanjut</button></form>`);
 }
 function startApply() {
@@ -741,83 +769,142 @@ function wizard() {
     <div class="lines" id="w-lines">${calcLines(p)}</div>`;
   } else if (st === 1) {
     const me = S.d.me;
-    body = `<h3>Data diri peminjam</h3><p class="mute small" style="margin-top:0">Sesuai KTP — dikirim ke pemberi modal bersama pengajuan. Perubahan data diri melalui admin.</p>
+    body = `<h3>Data diri peminjam</h3>
     <div class="lines" style="margin-bottom:16px">${[['full_name', 'Nama (KTP)'], ['nik', 'NIK'], ['kk_no', 'Nomor KK'], ['birth_place', 'Tempat lahir'], ['birth_date', 'Tanggal lahir'], ['address', 'Alamat'], ['phone', 'Telepon']]
       .map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(k === 'birth_date' ? tgl(me[k]) : me[k] || '-')}</b></div>`).join('')}</div>
-    <h3>Rekening penerima dana</h3><p class="mute small" style="margin-top:0">Pemberi modal mentransfer dana ke rekening ini, dan pengembalian wajib dari rekening yang sama. Pilih bank, isi nomor rekening dan nama pemilik (harus sama dengan nama KTP).</p>${bankForm(me, 'wiz')}
-    ${pemodalBox()}`;
+    <h3>Rekening penerima dana</h3>${bankForm(me, 'wiz')}`;
   } else if (st <= 4) {
     const [k, t, d] = DOCS[st - 2], s = W.shots[k];
-    body = `<h3>${t}</h3><p class="mute small">${d}</p><div class="shot">${s ? `<img src="${s.data}" alt="">` : `<div class="ph"><b>${k === 'selfie' ? '🤳' : '🪪'}</b>Belum ada foto</div>`}</div>
+    body = `<h3>${t}</h3><p class="mute small">${d}</p><div class="shot">${s ? `<img src="${s.data}" alt="">` : `<div class="ph">${ICO_DOC}Belum ada foto</div>`}</div>
     <div class="row" style="margin-top:12px">${k === 'selfie' ? `<button class="btn ${s ? '' : 'pri'}" data-a="cam" data-k="${k}">${s ? 'Ambil ulang' : 'Buka kamera'}</button>`
       : `<label class="btn ${s ? '' : 'pri'}">${s ? 'Ganti file' : 'Unggah file / galeri'}<input type="file" accept="image/*" data-k="${k}" hidden></label><button class="btn sm" data-a="cam" data-k="${k}">Foto dengan kamera</button>`}</div>
-    ${s ? `<div class="small mute" style="margin-top:8px">${s.meta.source === 'camera' ? '📷 kamera' : '📎 file diunggah'} · 🕒 ${wkt(s.meta.at)}${s.meta.lat != null ? ' · 📍 ' + s.meta.lat.toFixed(5) + ', ' + s.meta.lng.toFixed(5) : ''}</div>` : ''}`;
+    ${s ? `<div class="small mute" style="margin-top:8px">${s.meta.source === 'camera' ? 'Kamera' : 'File'}, ${wkt(s.meta.at)}${s.meta.lat != null ? ', lokasi ' + s.meta.lat.toFixed(5) + ', ' + s.meta.lng.toFixed(5) : ''}</div>` : ''}`;
   } else {
-    body = `<h3>Perjanjian pinjam modal</h3><div class="agree">${h(agreementText())}</div>
-    <div class="small mute" style="margin:12px 0 6px">Tanda tangan di kotak berikut</div><canvas class="sig" id="sig"></canvas>
+    body = `<div class="agree">${docHtml(agreementText(), { ro: true })}</div>
+    <div class="small mute" style="margin:12px 0 6px">Tanda tangan</div><canvas class="sig" id="sig"></canvas>
     <div class="row" style="margin-top:6px"><button class="btn sm" data-a="sigclear">Hapus tanda tangan</button></div>
-    <label class="chk"><input type="checkbox" id="agree" ${W.agree ? 'checked' : ''}><span>Saya telah membaca, memahami, dan menyetujui seluruh isi perjanjian ini. Data dan dokumen yang saya berikan benar.</span></label>
+    <label class="chk"><input type="checkbox" id="agree" ${W.agree ? 'checked' : ''}><span>Saya telah membaca dan menyetujui perjanjian ini, serta menyatakan data saya benar.</span></label>
     <div class="err" id="w-err"></div>`;
   }
   const can = st <= 1 || (st <= 4 ? !!W.shots[DOCS[st - 2][0]] : true);
   modal(`${mh('Ajukan pinjaman')}<div class="steps">${Array.from({ length: N }, (_, i) => `<i class="${i <= st ? 'on' : ''}"></i>`).join('')}</div>
-    <div class="small mute" style="margin:-4px 0 10px">Langkah ${st + 1} dari ${N} · ${['Nominal & tenor', 'Data diri & rekening', 'Foto KTP', 'Foto KK', 'Selfie + KTP', 'Perjanjian & tanda tangan'][st]}</div>${body}
+    <div class="small mute" style="margin:-4px 0 10px">Langkah ${st + 1} dari ${N} · ${['Nominal & tenor', 'Data diri & rekening', 'Foto KTP', 'Foto KK', 'Selfie dengan KTP', 'Perjanjian & tanda tangan'][st]}</div>${body}
     <div class="row" style="margin-top:18px;justify-content:space-between">${st ? '<button class="btn" data-a="wback">Kembali</button>' : '<span></span>'}
     ${st === 1 ? `<button class="btn pri" data-a="wbank">Simpan &amp; lanjut</button>` : st < 5 ? `<button class="btn pri" data-a="wnext" ${can ? '' : 'disabled'}>Lanjut</button>` : `<button class="btn pri" data-a="wsend" id="w-send">Setujui &amp; kirim</button>`}</div>`, 'wide');
   paintRanges();
   if (st === 5) initSig();
 }
+const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+function terbilang(n) {
+  const s = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+  const f = x => x < 12 ? s[x] : x < 20 ? f(x - 10) + ' belas' : x < 100 ? f(Math.floor(x / 10)) + ' puluh ' + f(x % 10) : x < 200 ? 'seratus ' + f(x - 100)
+    : x < 1000 ? f(Math.floor(x / 100)) + ' ratus ' + f(x % 100) : x < 2000 ? 'seribu ' + f(x - 1000) : x < 1e6 ? f(Math.floor(x / 1000)) + ' ribu ' + f(x % 1000)
+    : x < 1e9 ? f(Math.floor(x / 1e6)) + ' juta ' + f(x % 1e6) : f(Math.floor(x / 1e9)) + ' miliar ' + f(x % 1e9);
+  n = Math.floor(Math.abs(n || 0)); return n ? f(n).replace(/\s+/g, ' ').trim() : 'nol';
+}
+const rpT = n => `${rp(n)} (${terbilang(n)} rupiah)`;
+// teks perjanjian disimpan apa adanya saat pengajuan; format baris dibaca docParse (judul, blok "Label : isi", "Pasal n — Judul", butir "(1)")
 function agreementText() {
-  const me = S.d.me, s = S.d.settings || {}, p = plan(W.amt, W.n), now = new Date();
+  const me = S.d.me, p = plan(W.amt, W.n), now = new Date();
   const due = new Date(now.getTime() + 30 * W.n * DAY);
-  return `SURAT PERJANJIAN PINJAM MODAL
+  return `SURAT PERJANJIAN PINJAM-MEMINJAM UANG
 
-Pada hari ini, ${tglL(now)}, yang bertanda tangan di bawah ini:
+Pada hari ini, ${HARI[now.getDay()]}, tanggal ${tglL(now)}, yang bertanda tangan di bawah ini:
 
-PIHAK PERTAMA (Pemberi Modal):
-Nama              : ${PEMODAL.name} (juga tertulis ${PEMODAL.alias})
-Alamat            : ${PEMODAL.addr}
-Rekening          : ${bankStr(LENDER.mandiri)}
-                    ${bankStr(LENDER.bca)}
+I. PIHAK PERTAMA (Pemberi Pinjaman):
+Nama : ${PEMODAL.name}
+Alamat : ${PEMODAL.addr}
+Rekening : ${bankStr(LENDER.mandiri)}
+    ${bankStr(LENDER.bca)}
 
-PIHAK KEDUA (Peminjam):
-Nama lengkap      : ${me.full_name}
-NIK               : ${me.nik || '-'}
-Nomor KK          : ${me.kk_no || '-'}
-Tempat/tgl lahir  : ${me.birth_place}, ${me.birth_date ? tglL(me.birth_date) : '-'}
-Alamat            : ${me.address}
-Nama istri/suami  : ${me.spouse_name || '-'}
-Nama ibu kandung  : ${me.mother_name}
-Nomor telepon     : ${me.phone}
-Rekening          : ${bankStr(me)}
+II. PIHAK KEDUA (Peminjam):
+Nama lengkap : ${me.full_name}
+NIK : ${me.nik || '-'}
+Nomor KK : ${me.kk_no || '-'}
+Tempat, tanggal lahir : ${me.birth_place}, ${me.birth_date ? tglL(me.birth_date) : '-'}
+Alamat : ${me.address}
+Nama suami/istri : ${me.spouse_name || '-'}
+Nama ibu kandung : ${me.mother_name}
+Nomor telepon : ${me.phone}
+Rekening : ${bankStr(me)}
 
-Kedua pihak sepakat atas ketentuan berikut:
+PIHAK PERTAMA dan PIHAK KEDUA selanjutnya bersama-sama disebut PARA PIHAK. PARA PIHAK menyatakan cakap hukum dan sepakat mengikatkan diri dalam perjanjian pinjam-meminjam uang berdasarkan Pasal 1320, Pasal 1338, serta Pasal 1754 sampai dengan Pasal 1769 Kitab Undang-Undang Hukum Perdata (KUHPerdata), dengan ketentuan sebagai berikut:
 
 Pasal 1 — Pokok Pinjaman
-PIHAK PERTAMA meminjamkan modal sebesar ${rp(W.amt)} kepada PIHAK KEDUA, dihitung sejak tanggal dana dicairkan.
+PIHAK PERTAMA memberikan pinjaman uang kepada PIHAK KEDUA sebesar ${rpT(W.amt)}. Pinjaman berlaku sejak dana diterima di rekening PIHAK KEDUA.
 
-Pasal 2 — Bunga dan Tenor
-Bunga ${RATE}% per bulan dari pokok (${rp(p.I)} per bulan). Tenor ${W.n} bulan (1 bulan = 30 hari). Cicilan ${rp(p.inst)} per bulan, total pengembalian ${rp(p.total)}. Perkiraan jatuh tempo akhir ${tglL(due)} bila dicairkan hari ini.
+Pasal 2 — Bunga, Jangka Waktu, dan Angsuran
+(1) PIHAK KEDUA wajib membayar bunga sebesar ${RATE}% (${terbilang(RATE)} persen) per bulan dari pokok pinjaman, yaitu ${rp(p.I)} per bulan, yang diperjanjikan secara tertulis sesuai Pasal 1765 dan Pasal 1767 KUHPerdata.
+(2) Jangka waktu pinjaman ${W.n} (${terbilang(W.n)}) bulan; satu bulan dihitung 30 (tiga puluh) hari kalender.
+(3) Angsuran sebesar ${rp(p.inst)} per bulan, dengan total kewajiban ${rpT(p.total)}.
+(4) Jatuh tempo terakhir ${tglL(due)}, menyesuaikan tanggal pencairan dana.
 
 Pasal 3 — Pelunasan Dipercepat
-Apabila PIHAK KEDUA melunasi sebelum jatuh tempo, PIHAK KEDUA tetap membayar pokok ditambah bunga ${RATE}% untuk bulan berjalan.
+PIHAK KEDUA dapat melunasi pinjaman sebelum jatuh tempo dengan membayar pokok pinjaman ditambah bunga ${RATE}% untuk bulan berjalan.
 
-Pasal 4 — Keterlambatan
-Setiap hari keterlambatan dari tanggal jatuh tempo dikenakan denda ${LATE}% per hari dari sisa pinjaman yang belum dibayar.
+Pasal 4 — Wanprestasi dan Denda
+(1) PIHAK KEDUA dinyatakan lalai apabila tidak membayar angsuran pada tanggal jatuh tempo, tanpa memerlukan surat teguran, sesuai Pasal 1238 KUHPerdata.
+(2) Setiap hari keterlambatan dikenakan denda sebesar ${LATE}% (${terbilang(LATE)} persen) dari sisa kewajiban yang belum dibayar.
+(3) PIHAK PERTAMA berhak menuntut pelunasan seluruh kewajiban beserta denda, biaya, dan ganti rugi sesuai Pasal 1243 KUHPerdata.
 
-Pasal 5 — Pinjaman Berikutnya
-Setelah pinjaman ini lunas, PIHAK KEDUA dapat mengajukan pinjaman berikutnya hingga ${rp(nextLimit(W.amt))} (naik 25%).
+Pasal 5 — Rekening dan Pembayaran
+(1) Dana dicairkan ke rekening ${bankStr(me)} atas nama PIHAK KEDUA sesuai KTP, dari rekening PIHAK PERTAMA ${bankStr(LENDER.mandiri)} atau ${bankStr(LENDER.bca)}.
+(2) Setiap pembayaran wajib ditransfer dari rekening PIHAK KEDUA tersebut ke rekening PIHAK PERTAMA yang digunakan untuk pencairan, disertai bukti transfer.
+(3) Pembayaran sah setelah diverifikasi PIHAK PERTAMA. Pembayaran melalui rekening lain dapat ditolak.
 
-Pasal 6 — Data dan Dokumen
-PIHAK KEDUA menyerahkan foto/berkas KTP dan Kartu Keluarga asli, serta foto selfie memegang KTP asli yang diambil langsung dari kamera dengan cap waktu, lokasi, dan koordinat, serta menyatakan seluruh data adalah benar. Dokumen hanya digunakan untuk keperluan perjanjian ini.
+Pasal 6 — Pinjaman Berikutnya
+Setelah pinjaman ini lunas, PIHAK KEDUA dapat mengajukan pinjaman berikutnya hingga ${rpT(nextLimit(W.amt))}.
 
-Pasal 7 — Rekening dan Bukti Transfer
-Dana pinjaman hanya dicairkan ke rekening ${bankStr(me)}, yaitu rekening atas nama PIHAK KEDUA yang sesuai dengan KTP. Dana dicairkan dari salah satu rekening PIHAK PERTAMA: ${bankStr(LENDER.mandiri)} atau ${bankStr(LENDER.bca)}, disertai bukti transfer pencairan. Setiap pengembalian wajib ditransfer dari rekening PIHAK KEDUA yang menerima dana tersebut ke rekening PIHAK PERTAMA yang sama dengan rekening pencairan, disertai bukti transfer, dan baru dianggap diterima setelah diverifikasi PIHAK PERTAMA. Pembayaran dari atau ke rekening lain dapat ditolak.
+Pasal 7 — Pernyataan PIHAK KEDUA
+(1) Seluruh data dan dokumen yang diserahkan, yaitu KTP, Kartu Keluarga, dan swafoto memegang KTP dengan cap waktu dan lokasi, adalah benar dan sah.
+(2) PIHAK KEDUA berusia sekurang-kurangnya 18 (delapan belas) tahun dan tidak berada di bawah pengampuan.
+(3) Keterangan yang tidak benar menjadi tanggung jawab PIHAK KEDUA dan dapat diproses sesuai ketentuan hukum yang berlaku.
 
-Pasal 8 — Penyelesaian
-Perselisihan diselesaikan secara musyawarah dan kekeluargaan terlebih dahulu.
+Pasal 8 — Pelindungan Data Pribadi
+Data pribadi PIHAK KEDUA hanya diproses untuk pelaksanaan perjanjian ini dan dijaga kerahasiaannya sesuai Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi.
 
-Perjanjian ini disetujui secara elektronik oleh PIHAK KEDUA dengan tanda tangan digital.`;
+Pasal 9 — Tanda Tangan Elektronik
+Perjanjian ini ditandatangani secara elektronik dan sah sebagai alat bukti sesuai Pasal 5 dan Pasal 11 Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik beserta perubahannya. Salinan cetak dapat dibubuhi meterai sesuai Undang-Undang Nomor 10 Tahun 2020 tentang Bea Meterai.
+
+Pasal 10 — Penyelesaian Perselisihan
+(1) Perselisihan diselesaikan secara musyawarah untuk mufakat.
+(2) Apabila dalam 30 (tiga puluh) hari tidak tercapai mufakat, PARA PIHAK memilih domisili hukum di Kepaniteraan Pengadilan Negeri Magelang.
+
+Pasal 11 — Penutup
+Perjanjian ini berlaku sejak dana dicairkan dan berakhir setelah seluruh kewajiban PIHAK KEDUA dilunasi. Hal yang belum diatur akan disepakati secara tertulis oleh PARA PIHAK.
+
+Demikian perjanjian ini dibuat dengan sebenarnya, dalam keadaan sadar dan tanpa paksaan dari pihak mana pun.`;
+}
+// ---------- dokumen formal: teks perjanjian → blok (judul, data pihak, pasal, butir) untuk tampilan & PDF ----------
+const itemOf = x => { const m = x.trim().match(/^(\(\d+\)|[a-z]\.|\d+\.)\s+(.*)$/); return m ? { lab: m[1], txt: m[2] } : { lab: '', txt: x.trim() }; };
+function docParse(text) {
+  const out = [], kvRe = /^(\S[^:]{0,44}?)\s*:\s(.*)$/;
+  for (const blk of String(text || '').replace(/\r/g, '').split(/\n\s*\n/)) {
+    const ls = blk.split('\n').filter(x => x.trim()); if (!ls.length) continue;
+    if (!out.length && ls.length <= 2 && /^[A-Z0-9 .,()\-–—]+$/.test(ls[0].trim())) { out.push({ t: 'title', lines: ls.map(x => x.trim()) }); continue; }
+    const pm = ls[0].trim().match(/^Pasal\s+(\d+)\s*(?:[—–-]\s*(.*))?$/i);
+    if (pm) { out.push({ t: 'pasal', n: pm[1], title: (pm[2] || '').trim(), items: ls.slice(1).map(itemOf) }); continue; }
+    let head = null, rest = ls;
+    if (ls.length > 1 && /:\s*$/.test(ls[0]) && kvRe.test(ls[1])) { head = ls[0].trim().replace(/:$/, ''); rest = ls.slice(1); }
+    if (kvRe.test(rest[0]) && rest.every(x => kvRe.test(x) || /^\s{2,}\S/.test(x))) {
+      const rows = []; rest.forEach(x => { const m = !/^\s/.test(x) && x.match(kvRe); if (m) rows.push([m[1].trim(), m[2].trim()]); else rows[rows.length - 1][1] += '\n' + x.trim(); });
+      out.push({ t: 'kv', head, rows }); continue;
+    }
+    ls.forEach(x => out.push({ t: 'p', ...itemOf(x) }));
+  }
+  return out;
+}
+const itH = it => it.lab ? `<div class="li"><span>${h(it.lab)}</span><span>${h(it.txt)}</span></div>` : `<p>${h(it.txt)}</p>`;
+// tampilan baca-saja: tidak bisa diedit atau diseleksi
+function docHtml(text, o = {}) {
+  let s = o.kop ? `<div class="doc-bar">${LOGO}${WM}</div>` : '';
+  for (const b of docParse(text)) {
+    if (b.t === 'title') s += b.lines.map(x => `<div class="dt">${h(x)}</div>`).join('') + `<div class="dn">${o.no ? 'Nomor: ' + h(o.no) : ''}</div>`;
+    else if (b.t === 'kv') s += (b.head ? `<div class="ph">${h(b.head)}</div>` : '') + `<table>${b.rows.map(([k, v]) => `<tr><td>${h(k)}</td><td>:</td><td>${h(v).replace(/\n/g, '<br>')}</td></tr>`).join('')}</table>`;
+    else if (b.t === 'pasal') s += `<h4>Pasal ${h(b.n)}${b.title ? `<span>${h(b.title)}</span>` : ''}</h4>` + b.items.map(itH).join('');
+    else s += itH(b);
+  }
+  return `<div class="doc${o.ro === false ? '' : ' ro'}" oncontextmenu="return false">${s}</div>`;
 }
 function initSig() {
   const c = $('#sig'); if (!c) return;
@@ -860,9 +947,8 @@ async function sendApply() {
 // setelah pengajuan terkirim: tombol "Ajukan" → WhatsApp pemberi modal dengan pesan siap kirim, diteruskan otomatis
 const WA_APPLY = 'http://wa.me/+6282299774825?text=' + encodeURIComponent('saya sudah mengajukan pinjaman modal di http://amatusapa.github.io');
 function appliedModal() {
-  modal(`${mh('Pengajuan terkirim ✓')}<p class="mute">Langkah terakhir: konfirmasi pengajuan ke pemberi modal lewat WhatsApp. Anda akan diarahkan otomatis…</p>
-    <div class="note" style="margin:10px 0 14px">Pesan: “saya sudah mengajukan pinjaman modal di http://amatusapa.github.io”</div>
-    <a class="btn pri wide" id="wa-apply" href="${WA_APPLY}" rel="noopener">Ajukan via WhatsApp</a>`);
+  modal(`${mh('Pengajuan terkirim')}<p class="lead">Konfirmasi melalui WhatsApp untuk mempercepat verifikasi.</p>
+    <a class="btn pri wide" id="wa-apply" href="${WA_APPLY}" rel="noopener">Konfirmasi via WhatsApp</a>`);
   clearTimeout(S.waT); S.waT = setTimeout(() => { if ($('#wa-apply')) location.href = WA_APPLY; }, 1500);
 }
 // ---------- kamera dengan waktu & lokasi ----------
@@ -885,7 +971,7 @@ async function startStream() {
     C.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: C.facing, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false });
     v.srcObject = C.stream; await v.play().catch(() => {});
     camInfo();
-  } catch (e) { $('#cam-info').innerHTML = '⚠️ Kamera tidak bisa dibuka. Izinkan akses kamera di browser lalu coba lagi.<br><small>' + h(e.message) + '</small>'; }
+  } catch (e) { $('#cam-info').innerHTML = 'Kamera tidak dapat dibuka. Izinkan akses kamera.<br><small>' + h(e.message) + '</small>'; }
 }
 function startGeo() {
   if (!navigator.geolocation) { C.geoErr = 'Perangkat tidak mendukung lokasi'; return; }
@@ -904,7 +990,7 @@ async function reverse(lat, lng) {
 function camInfo() {
   const i = $('#cam-info'); if (!i) return;
   const g = C.geo;
-  i.innerHTML = `🕒 <span id="cam-clock">${wkt(new Date())}</span><br>${g ? `📍 ${g.latitude.toFixed(5)}, ${g.longitude.toFixed(5)} (±${Math.round(g.accuracy)} m)${C.addr ? '<br>' + h(C.addr) : ''}` : '📍 ' + (C.geoErr || 'Mencari lokasi…')}`;
+  i.innerHTML = `<span id="cam-clock">${wkt(new Date())}</span><br>${g ? `${g.latitude.toFixed(5)}, ${g.longitude.toFixed(5)} (±${Math.round(g.accuracy)} m)${C.addr ? '<br>' + h(C.addr) : ''}` : (C.geoErr || 'Mencari lokasi…')}`;
 }
 setInterval(() => { const c = $('#cam-clock'); if (c) c.textContent = wkt(new Date()); }, 1000);
 function stopCam() {
@@ -923,9 +1009,9 @@ function stampAndSave(src, w, hgt, mirror, source) {
   const x = c.getContext('2d');
   x.drawImage(src, 0, 0, cw, ch);
   const now = new Date();
-  const lines = [`${DOCS.find(d => d[0] === k)[1].toUpperCase()} · Modalin · @${S.d.me.username}`,
+  const lines = [`${DOCS.find(d => d[0] === k)[1].toUpperCase()} · ${APP} · @${S.d.me.username}`,
     `${now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} ${now.toLocaleTimeString('id-ID')} ${tzName()}`,
-    g ? `${g.latitude.toFixed(6)}, ${g.longitude.toFixed(6)} (±${Math.round(g.accuracy)} m)` : source === 'camera' ? 'Lokasi tidak tersedia' : 'Diunggah dari file · hanya untuk Modalin'];
+    g ? `${g.latitude.toFixed(6)}, ${g.longitude.toFixed(6)} (±${Math.round(g.accuracy)} m)` : source === 'camera' ? 'Lokasi tidak tersedia' : `Diunggah dari file · khusus ${APP}`];
   if (C.addr && g) lines.push(C.addr);
   const fs = Math.max(14, Math.round(cw / 46)), lh = fs * 1.35, pad = fs * .8, bh = lines.length * lh + pad * 2;
   x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(0, ch - bh, cw, bh);
@@ -964,86 +1050,91 @@ async function fileShot(input) {
   if (stampAndSave(img, img.naturalWidth, img.naturalHeight, false, 'file')) wizard();
 }
 
-// ---------- struk 1 lembar (A4 150 dpi): data transaksi + ringkasan perjanjian → PNG / PDF ----------
+// ---------- bukti transaksi 1 lembar (A4 150 dpi), format surat resmi → PDF terkunci (admin: juga PNG) ----------
 async function strukCanvas(l) {
-  const u = (isAdmin() ? userById(l.user_id) : S.d.me) || {}, W_ = 1240, H_ = 1754, M = 80;
+  const u = (isAdmin() ? userById(l.user_id) : S.d.me) || {}, W_ = 1240, H_ = 1754, ML = 148, MR = 118, CW = W_ - ML - MR, XR = W_ - MR, CX = ML + CW / 2;
   const c = document.createElement('canvas'); c.width = W_; c.height = H_;
-  const x = c.getContext('2d'), F = '"Plus Jakarta Sans",system-ui,sans-serif', ink = '#0f1b2d', mute = '#5b6577', line = '#d9dee7';
+  const x = c.getContext('2d'), F = '"Times New Roman",Tinos,Times,serif', ink = '#111827', mute = '#5a6270', line = '#9aa0aa';
   x.fillStyle = '#fff'; x.fillRect(0, 0, W_, H_);
-  const font = (sz, wt = 500) => x.font = `${wt} ${sz}px ${F}`;
-  const txt = (t, X, Y, o = {}) => { font(o.sz || 22, o.wt); x.fillStyle = o.c || ink; x.textAlign = o.al || 'left'; x.fillText(String(t), X, Y); x.textAlign = 'left'; };
-  const wrap = (t, X, Y, w, lh, o = {}) => { font(o.sz || 20, o.wt); const ws = String(t).split(' '); let ln = '';
-    for (const w_ of ws) { const tt = ln ? ln + ' ' + w_ : w_; if (x.measureText(tt).width > w && ln) { txt(ln, X, Y, o); Y += lh; ln = w_; } else ln = tt; }
-    if (ln) { txt(ln, X, Y, o); Y += lh; } return Y; };
-  const hr = Y => { x.strokeStyle = line; x.lineWidth = 2; x.beginPath(); x.moveTo(M, Y); x.lineTo(W_ - M, Y); x.stroke(); };
-  const kv = (k, v, X, Y, w) => { txt(k, X, Y, { sz: 19, c: mute }); font(21, 700); let s_ = String(v); while (x.measureText(s_).width > w - 230 && s_.length > 8) s_ = s_.slice(0, -2) + '…'; txt(s_.replace(/……$/, '…'), X + w, Y, { sz: 21, wt: 700, al: 'right' }); };
-  const st = { pending: 'Menunggu persetujuan', active: 'Berjalan', paid: 'Lunas', rejected: 'Ditolak', cancelled: 'Dibatalkan' }[l.status] || l.status;
+  const font = (sz, wt = 400, it) => x.font = `${it ? 'italic ' : ''}${wt} ${sz}px ${F}`;
+  const txt = (t, X, Y, o = {}) => { font(o.sz || 20, o.wt, o.it); x.fillStyle = o.c || ink; x.textAlign = o.al || 'left'; x.fillText(String(t), X, Y); x.textAlign = 'left'; };
+  const fit = (t, w, sz, wt) => { font(sz, wt); let s_ = String(t); if (x.measureText(s_).width <= w) return s_; while (s_.length > 4 && x.measureText(s_ + '…').width > w) s_ = s_.slice(0, -1); return s_ + '…'; };
+  // paragraf rata kiri-kanan (baris terakhir rata kiri)
+  const para = (t, X, Y, w, lh, o = {}) => { font(o.sz || 19, o.wt); const L = []; let cur = [];
+    for (const v of String(t).split(/\s+/)) { if (cur.length && x.measureText([...cur, v].join(' ')).width > w) { L.push(cur); cur = [v]; } else cur.push(v); } if (cur.length) L.push(cur);
+    x.fillStyle = o.c || ink;
+    L.forEach((ws, i) => { if (i === L.length - 1 || ws.length < 2) x.fillText(ws.join(' '), X, Y);
+      else { const g = (w - ws.reduce((s_, v) => s_ + x.measureText(v).width, 0)) / (ws.length - 1); let X_ = X; ws.forEach(v => { x.fillText(v, X_, Y); X_ += x.measureText(v).width + g; }); } Y += lh; });
+    return Y; };
+  const rule = (Y, wd = 1.2, col = line, X1 = ML, X2 = XR) => { x.strokeStyle = col; x.lineWidth = wd; x.beginPath(); x.moveTo(X1, Y); x.lineTo(X2, Y); x.stroke(); };
+  const kv = (rows, X, Y, w, lw, lh = 33) => { rows.forEach(([k, v]) => { txt(k, X, Y, { sz: 19, c: mute }); txt(':', X + lw, Y, { sz: 19, c: mute }); txt(fit(v, w - lw - 16, 19, 700), X + lw + 14, Y, { sz: 19, wt: 700 }); Y += lh; }); return Y; };
+  const head = (t, Y, X = ML) => { txt(t, X, Y, { sz: 21, wt: 700 }); return Y + 36; };
   const b = l.approved_at ? bill(l, S.d.payments) : null, pl = plan(+l.amount, +l.tenor, +l.rate);
-  const src = l.bank?.lender ? LENDER[l.bank.lender] : null, dst = l.bank?.bank_no ? l.bank : u;
-  // kepala
-  x.fillStyle = '#0f1b2d'; x.fillRect(0, 0, W_, 150);
-  txt('MODALIN', M, 72, { sz: 44, wt: 800, c: '#fff' }); txt('Struk Pinjaman Modal', M, 112, { sz: 22, c: '#c9d3e3' });
-  txt(`No. MDL-${String(l.id).padStart(5, '0')}-${l.no}`, W_ - M, 72, { sz: 24, wt: 700, c: '#fff', al: 'right' });
-  txt('Dicetak ' + wkt(new Date()), W_ - M, 112, { sz: 18, c: '#c9d3e3', al: 'right' });
-  let Y = 205; const cw = (W_ - M * 2 - 40) / 2, X2 = M + cw + 40;
-  txt('PEMINJAM', M, Y, { sz: 17, wt: 800, c: mute }); txt('PINJAMAN', X2, Y, { sz: 17, wt: 800, c: mute }); Y += 38;
-  const L1 = [['Nama', u.full_name || '-'], ['NIK', u.nik || '-'], ['Telepon', u.phone || '-'], ['Akun', '@' + (u.username || '-')], ['Status', st]];
-  const L2 = [['Pokok', rp(l.amount)], ['Tenor', `${l.tenor} bulan`], ['Bunga', `${+l.rate}% / bulan (${rp(pl.I)})`], ['Cicilan / bulan', rp(pl.inst)], ['Total kontrak', rp(pl.total)]];
-  L1.forEach((r, i) => kv(r[0], r[1], M, Y + i * 36, cw)); L2.forEach((r, i) => kv(r[0], r[1], X2, Y + i * 36, cw));
-  Y += 5 * 36 + 10; hr(Y); Y += 42;
-  txt('PEMBERI MODAL', M, Y, { sz: 17, wt: 800, c: mute }); Y += 36;
-  kv('Nama', PEMODAL.name, M, Y, W_ - M * 2); Y += 32;
-  Y = wrap('Alamat: ' + PEMODAL.addr, M, Y, W_ - M * 2, 27, { sz: 18, c: mute }) + 8; hr(Y); Y += 42;
-  txt('REKENING', M, Y, { sz: 17, wt: 800, c: mute }); Y += 36;
-  kv('Pencairan dari', src ? bankStr(src) : '-', M, Y, W_ - M * 2); Y += 36;
-  kv('Diterima di', bankStr(dst), M, Y, W_ - M * 2); Y += 36;
-  kv('Pengembalian ke', src ? bankStr(src) + ' (rekening sama)' : 'Mandiri / BCA pemberi modal (rekening sama dengan pencairan)', M, Y, W_ - M * 2); Y += 26; hr(Y); Y += 42;
-  // transaksi
-  const tx = [{ d: l.applied_at, j: 'Pengajuan', n: +l.amount, r: '', s: 'Diajukan' }];
-  if (l.approved_at) tx.push({ d: l.approved_at, j: 'Pencairan', n: +l.amount, r: src ? src.bank_name + ' → ' + (dst.bank_name || '') : '', s: l.files?.cair ? 'Bukti ada' : '-' });
-  S.d.payments.filter(p => p.loan_id === l.id).sort((a, b_) => new Date(a.paid_on) - new Date(b_.paid_on)).forEach(p =>
-    tx.push({ d: p.paid_on, j: p.by_admin ? 'Pembayaran (dicatat)' : 'Pengembalian', n: +p.amount, r: p.to_bank ? p.to_bank.split(' a.n.')[0] : '', s: { ok: 'Diterima', pending: 'Menunggu verifikasi', rejected: 'Ditolak' }[p.status] }));
-  txt('DATA TRANSAKSI', M, Y, { sz: 17, wt: 800, c: mute }); Y += 34;
-  const cols = [M, M + 175, M + 410, M + 690, W_ - M];
-  x.fillStyle = '#f2f4f8'; x.fillRect(M, Y - 26, W_ - M * 2, 40);
-  ['Tanggal', 'Jenis', 'Rekening', 'Status'].forEach((t, i) => txt(t, cols[i] + 10, Y, { sz: 18, wt: 700, c: mute })); txt('Nominal', cols[4] - 10, Y, { sz: 18, wt: 700, c: mute, al: 'right' }); Y += 42;
-  const maxRows = 10, rows = tx.length > maxRows ? tx.slice(0, 2).concat([{ d: null, j: `… ${tx.length - maxRows + 1} transaksi lain`, n: null, r: '', s: '' }], tx.slice(-(maxRows - 3))) : tx;
-  rows.forEach(r => { txt(r.d ? tgl(r.d) : '', cols[0] + 10, Y, { sz: 19 }); txt(r.j, cols[1] + 10, Y, { sz: 19, wt: 600 });
-    font(17); let rr = r.r; while (rr && x.measureText(rr).width > 260) rr = rr.slice(0, -2); txt(rr === r.r ? rr : rr + '…', cols[2] + 10, Y, { sz: 17, c: mute });
-    txt(r.s, cols[3] + 10, Y, { sz: 18, c: r.s === 'Ditolak' ? '#c0392b' : r.s === 'Diterima' ? '#1e8e4e' : ink });
-    if (r.n != null) txt(rp(r.n), cols[4] - 10, Y, { sz: 19, wt: 700, al: 'right' }); Y += 36; });
-  Y += 4; hr(Y); Y += 40;
-  const sum = b ? [['Sudah dibayar (diverifikasi)', rp(b.paid)], ['Denda keterlambatan', rp(b.denda)], [l.status === 'paid' ? 'Sisa tagihan' : 'Pelunasan hari ini', rp(l.status === 'paid' ? 0 : b.payoff)]] : [['Total kontrak', rp(pl.total)]];
-  sum.forEach(([k, v], i) => { const last = i === sum.length - 1; kv(k, v, M + 520, Y, W_ - M * 2 - 520); if (last) { x.strokeStyle = ink; x.lineWidth = 2; x.beginPath(); x.moveTo(M + 520, Y + 14); x.lineTo(W_ - M, Y + 14); x.stroke(); } Y += 36; });
-  Y += 10; hr(Y); Y += 42;
-  // perjanjian ringkas
-  txt('RINGKASAN PERJANJIAN', M, Y, { sz: 17, wt: 800, c: mute }); Y += 34;
-  const due = l.approved_at ? new Date(new Date(l.approved_at).getTime() + l.tenor * 30 * 864e5) : null;
-  [`1. Pokok ${rp(l.amount)}, tenor ${l.tenor} bulan (1 bulan = 30 hari), bunga ${+l.rate}% per bulan dari pokok; total ${rp(pl.total)}${due ? ', jatuh tempo akhir ' + tglL(due) : ''}.`,
-   `2. Pelunasan sebelum jatuh tempo: pokok + bunga ${+l.rate}% bulan berjalan.`,
-   `3. Keterlambatan: denda ${+l.late_rate}% per hari dari sisa pinjaman.`,
-   `4. Dana dicairkan ke rekening atas nama peminjam sesuai KTP. Pengembalian wajib dari rekening penerima yang sama ke rekening pemberi modal yang sama dengan pencairan, disertai bukti transfer, dan dianggap diterima setelah diverifikasi.`,
-   `5. Peminjam menyatakan seluruh data dan dokumen (KTP, KK, selfie memegang KTP asli dengan waktu & koordinat) benar. Perjanjian lengkap disetujui elektronik pada ${wkt(l.applied_at)}.`]
-    .forEach(t => { Y = wrap(t, M, Y, W_ - M * 2, 29, { sz: 19 }) + 6; });
+  const src = l.bank?.lender ? LENDER[l.bank.lender] : null, dst = l.bank?.bank_no ? l.bank : u, now = new Date();
+  const no = docNo(l).replace('AC-PK', 'AC-BT');
+  // kop
+  try { x.drawImage(await imgEl(await logoPng()), ML, 60, 104, 104); } catch {}
+  txt('AMATUSAPA CASH', ML + 128, 104, { sz: 40, wt: 700 });
+  txt('Layanan Pinjaman Dana Tunai', ML + 128, 138, { sz: 21, it: true, c: mute });
+  txt(`${KOP.addr}  |  ${KOP.web}`, ML + 128, 166, { sz: 18, c: mute });
+  rule(194, 4.5, ink); rule(203, 1.4, ink);
+  // judul
+  font(30, 700); const T = 'BUKTI TRANSAKSI PINJAMAN', tw = x.measureText(T).width;
+  txt(T, CX, 262, { sz: 30, wt: 700, al: 'center' }); rule(268, 2, ink, CX - tw / 2, CX + tw / 2);
+  txt('Nomor: ' + no, CX, 300, { sz: 20, al: 'center' });
+  // A & B
+  let Y = 360; const cw = (CW - 44) / 2, X2 = ML + cw + 44;
+  head('A. Data Peminjam', Y); head('B. Rincian Pinjaman', Y, X2); Y += 38;
+  const ya = kv([['Nama', u.full_name || '-'], ['NIK', u.nik || '-'], ['Telepon', u.phone || '-'], ['Status', ST_L[l.status] || l.status], ['Diajukan', tgl(l.applied_at)]], ML, Y, cw, 120);
+  const yb = kv([['Pokok', rp(l.amount)], ['Tenor', `${l.tenor} bulan`], ['Bunga', `${+l.rate}% per bulan`], ['Angsuran', rp(pl.inst) + ' / bulan'], ['Total kewajiban', rp(pl.total)]], X2, Y, cw, 150);
+  Y = Math.max(ya, yb) + 8;
+  Y = head('C. Rekening', Y);
+  Y = kv([['Pencairan dari', src ? bankStr(src) : '-'], ['Diterima di', bankStr(dst)], ['Pembayaran ke', src ? bankStr(src) : 'Rekening pencairan pemberi pinjaman']], ML, Y, CW, 200) + 8;
+  // D. transaksi (tabel bergaris)
+  Y = head('D. Riwayat Transaksi', Y);
+  const tx = [{ d: l.applied_at, j: 'Pengajuan', n: +l.amount, r: '-', s: 'Diajukan' }];
+  if (l.approved_at) tx.push({ d: l.approved_at, j: 'Pencairan', n: +l.amount, r: src ? `${src.bank_name} ke ${dst.bank_name || '-'}` : '-', s: 'Selesai' });
+  S.d.payments.filter(p => p.loan_id === l.id).sort((a, c_) => new Date(a.paid_on) - new Date(c_.paid_on)).forEach(p =>
+    tx.push({ d: p.paid_on, j: p.by_admin ? 'Pembayaran (dicatat)' : 'Pembayaran', n: +p.amount, r: p.to_bank ? 'ke ' + p.to_bank.split(' a.n.')[0] : '-', s: { ok: 'Diterima', pending: 'Diverifikasi', rejected: 'Ditolak' }[p.status] }));
+  const maxR = 6, rows = tx.length > maxR ? tx.slice(0, 2).concat([{ j: `${tx.length - maxR + 1} transaksi lain`, r: '', s: '' }], tx.slice(-(maxR - 3))) : tx;
+  const cols = [150, 220, 270, 160, CW - 800], cx = cols.reduce((a, w, i) => (a.push(a[i] + w), a), [ML]), RH = 40;
+  const row = (cells, Y_, o = {}) => { if (o.fill) { x.fillStyle = '#eef0f4'; x.fillRect(ML, Y_, CW, RH); } x.strokeStyle = line; x.lineWidth = 1.2;
+    cols.forEach((w, i) => x.strokeRect(cx[i], Y_, w, RH)); cells.forEach((t, i) => i === 4 ? txt(t, cx[5] - 10, Y_ + 27, { sz: 18, wt: o.wt || 700, al: 'right' }) : txt(fit(t, cols[i] - 20, 18, o.wt), cx[i] + 10, Y_ + 27, { sz: 18, wt: o.wt })); };
+  row(['Tanggal', 'Jenis', 'Rekening', 'Status', 'Nominal'], Y, { fill: true, wt: 700 }); Y += RH;
+  rows.forEach(r => { row([r.d ? tgl(r.d) : '', r.j, r.r, r.s, r.n != null ? rp(r.n) : ''], Y, { wt: 400 }); Y += RH; });
+  Y += 34;
+  // E. ringkasan
+  Y = head('E. Ringkasan', Y);
+  Y = kv(b ? [['Terbayar (terverifikasi)', rp(b.paid)], ['Denda keterlambatan', rp(b.denda)], [l.status === 'paid' ? 'Sisa kewajiban' : 'Pelunasan per hari ini', rp(l.status === 'paid' ? 0 : b.payoff)]]
+    : [['Total kewajiban', rp(pl.total)], ['Status', ST_L[l.status] || l.status]], ML, Y, CW, 300) + 8;
+  // F. ketentuan pokok
+  Y = head('F. Ketentuan Pokok', Y);
+  [`Bunga ${+l.rate}% per bulan dari pokok. Pelunasan sebelum jatuh tempo: pokok ditambah bunga bulan berjalan.`,
+   `Keterlambatan dikenakan denda ${+l.late_rate}% per hari dari sisa kewajiban, sesuai Pasal 4 perjanjian.`,
+   'Pembayaran dari rekening peminjam ke rekening pencairan, sah setelah diverifikasi pemberi pinjaman.']
+    .forEach((t, i) => { txt(`${i + 1}.`, ML, Y, { sz: 19 }); Y = para(t, ML + 34, Y, CW - 34, 28) + 6; });
   // tanda tangan
-  const sy = Math.max(Y + 20, H_ - 300);
-  txt('Peminjam (PIHAK KEDUA)', M, sy, { sz: 18, c: mute }); txt('Pemberi Modal (PIHAK PERTAMA)', W_ - M, sy, { sz: 18, c: mute, al: 'right' });
-  if (l.files?.sign) { try { const im = await imgEl(await loadImg(l.files.sign)); const sh = 120, sw = Math.min(380, im.naturalWidth * sh / im.naturalHeight); x.drawImage(im, M, sy + 12, sw, sh); } catch {} }
-  txt(u.full_name || '', M, sy + 168, { sz: 21, wt: 700 }); txt(PEMODAL.name, W_ - M, sy + 168, { sz: 21, wt: 700, al: 'right' });
-  if (l.approved_at) txt('✓ Disetujui & dicairkan ' + tgl(l.approved_at), W_ - M, sy + 80, { sz: 19, wt: 700, c: '#1e8e4e', al: 'right' });
-  x.fillStyle = '#f2f4f8'; x.fillRect(0, H_ - 70, W_, 70);
-  txt('Struk dibuat otomatis oleh Modalin dari data server · amatusapa.github.io', W_ / 2, H_ - 28, { sz: 17, c: mute, al: 'center' });
+  const sy = Math.max(Y + 30, H_ - 330), sx = ML + CW / 2 + 22;
+  txt('Pemberi Pinjaman,', ML, sy, { sz: 19, c: mute }); txt('Peminjam,', sx, sy, { sz: 19, c: mute });
+  if (l.files?.sign) { try { const im = await imgEl(await loadImg(l.files.sign)); const sh = 104, sw = Math.min(330, im.naturalWidth * sh / im.naturalHeight); x.drawImage(im, sx, sy + 12, sw, sh); } catch {} }
+  if (l.approved_at) txt('Disetujui elektronik', ML, sy + 72, { sz: 18, it: true, c: mute });
+  [[PEMODAL.name, ML, l.approved_at ? 'Dicairkan ' + tgl(l.approved_at) : 'Belum dicairkan'], [u.full_name || '', sx, 'Ditandatangani ' + tgl(l.applied_at)]].forEach(([n, X, sub]) => {
+    font(20, 700); const w = Math.max(300, x.measureText(n).width); txt(n, X, sy + 150, { sz: 20, wt: 700 }); rule(sy + 157, 1.4, ink, X, X + w); txt(sub, X, sy + 184, { sz: 17, c: mute }); });
+  // kaki
+  const code = await docCode(no + '|' + l.amount + '|' + l.status + '|' + tx.map(t => t.n + t.s).join(','));
+  rule(H_ - 100, 1.2);
+  txt(`Dokumen elektronik ${APP}, sah tanpa tanda tangan basah. Kode verifikasi ${code}.`, ML, H_ - 66, { sz: 16, it: true, c: mute });
+  txt(`Diterbitkan ${wkt(now)}`, ML, H_ - 40, { sz: 16, c: mute }); txt('Halaman 1 dari 1', XR, H_ - 40, { sz: 16, c: mute, al: 'right' });
   return c;
 }
 async function strukModal(id) {
   const l = S.d.loans.find(x => x.id === +id); if (!l) return;
-  modal(`${mh('Struk pinjaman')}<div class="small mute">Menyiapkan struk…</div>`, 'wide');
+  modal(`${mh('Bukti transaksi')}<div class="small mute">Menyiapkan dokumen…</div>`, 'wide');
   try { await document.fonts?.ready; } catch {}
   const c = await strukCanvas(l), url = c.toDataURL('image/png');
-  S.struk = { url, jpg: c.toDataURL('image/jpeg', .9), name: `Struk-Modalin-${String(l.id).padStart(5, '0')}-${l.no}` };
-  modal(`${mh('Struk pinjaman')}<p class="mute small" style="margin-top:0">1 lembar A4 · data transaksi &amp; ringkasan perjanjian, dibuat otomatis.</p>
-    <div class="row" style="margin-bottom:12px"><button class="btn pri" data-a="struk-pdf">Unduh PDF</button><button class="btn" data-a="struk-png">Unduh gambar (PNG)</button></div>
-    <img src="${url}" alt="Struk pinjaman" style="width:100%;border-radius:12px;border:1px solid var(--line)">`, 'wide');
+  S.struk = { url, jpg: c.toDataURL('image/jpeg', .92), name: `Bukti-Transaksi-${String(l.id).padStart(5, '0')}-${l.no}` };
+  modal(`${mh('Bukti transaksi')}<div class="row" style="margin-bottom:12px"><button class="btn pri" data-a="struk-pdf">Unduh PDF</button>${isAdmin() ? '<button class="btn" data-a="struk-png">Unduh PNG</button>' : ''}<span class="small mute">Dokumen terkunci, hanya dapat dilihat dan dicetak.</span></div>
+    <img src="${url}" alt="Bukti transaksi" draggable="false" oncontextmenu="return false" style="width:100%;border-radius:10px;border:1px solid var(--line)">`, 'wide');
 }
 function loadScript(src) { return new Promise((ok, no) => { if ([...document.scripts].some(s => s.src === src)) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.append(s); }); }
 function saveBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
@@ -1051,10 +1142,10 @@ async function strukSave(kind) {
   const k = S.struk; if (!k) return;
   if (kind === 'png') return saveBlob(await (await fetch(k.url)).blob(), k.name + '.png');
   try {
-    await loadScript(JSPDF);
-    const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
-    pdf.addImage(k.jpg, 'JPEG', 0, 0, 210, 297); saveBlob(pdf.output('blob'), k.name + '.pdf');
-  } catch { toast('Gagal membuat PDF — unduh gambar PNG'); }
+    const K = await pdfKit();
+    K.pdf.addImage(k.jpg, 'JPEG', 0, 0, 210, 297); K.pdf.setProperties({ title: 'Bukti Transaksi Pinjaman', author: APP, creator: APP });
+    saveBlob(K.pdf.output('blob'), k.name + '.pdf');
+  } catch (e) { console.error(e); toast('Gagal membuat PDF'); }
 }
 
 // ---------- detail pinjaman ----------
@@ -1068,20 +1159,21 @@ function fillThumbs() {
   document.querySelectorAll('[data-thumb]').forEach(async el => { try { el.querySelector('img').src = await loadImg(el.dataset.thumb); } catch {} });
 }
 function thumbs(l) {
-  const lab = { ktp: 'KTP', kk: 'KK', selfie: 'Selfie + KTP', sign: 'Tanda tangan', cair: 'Bukti pencairan' };
+  const lab = { ktp: 'KTP', kk: 'KK', selfie: 'Selfie', sign: 'Tanda tangan', cair: 'Bukti pencairan' };
   return `<div class="thumbs">${['ktp', 'kk', 'selfie', 'sign', 'cair'].filter(k => l.files[k]).map(k => { const f = fileById(l.files[k]);
     return `<div><div class="th" data-a="img" data-id="${l.files[k]}" data-thumb="${l.files[k]}"><img alt=""><span>${lab[k]}</span></div>
     ${f && f.meta && k === 'cair' ? `<div class="small mute" style="margin-top:4px">diunggah ${wkt(f.meta.at || f.created_at)}</div>` : ''}
-    ${f && f.meta && k !== 'sign' && k !== 'cair' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source === 'camera' ? ' · kamera' : k === 'selfie' ? ' · ⚠️ ' + h(f.meta.source || 'bukan kamera') : ' · file'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.meta.lat},${f.meta.lng}">📍 peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
+    ${f && f.meta && k !== 'sign' && k !== 'cair' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source === 'camera' ? ' · kamera' : k === 'selfie' ? ' · <span class="bad-t">' + h(f.meta.source || 'bukan kamera') + '</span>' : ' · file'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.meta.lat},${f.meta.lng}">Lihat peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
 }
 function viewLoan(id) {
   const draw = () => {
     const l = S.d.loans.find(x => x.id === +id); if (!l) return closeModal();
-    modal(`${mh(`Pinjaman ke-${l.no} · ${rp(l.amount)}`)}${statusPill(l, l.approved_at ? bill(l, S.d.payments) : null)}
-      <h3 style="margin-top:16px">Dokumen</h3>${thumbs(l)}
-      ${l.approved_at ? `<h3 style="margin-top:16px">Pembayaran</h3>${payTable(l)}` : ''}
-      <h3 style="margin-top:16px">Perjanjian</h3><div class="agree">${h(l.agreement || '')}</div>
-      <div class="row" style="margin-top:14px"><button class="btn sm pri" data-a="struk" data-id="${l.id}">🧾 Struk (PDF / gambar)</button><button class="btn sm" data-a="print" data-id="${l.id}">Cetak perjanjian lengkap</button></div>`, 'wide', draw);
+    modal(`${mh(`Pinjaman ke-${l.no} · ${rp(l.amount)}`)}<div class="row" style="margin-bottom:14px">${statusPill(l, l.approved_at ? bill(l, S.d.payments) : null)}<span class="small mute">Nomor ${h(docNo(l))}</span></div>
+      <div class="row" style="margin-bottom:8px"><button class="btn sm pri" data-a="print" data-id="${l.id}">Unduh perjanjian (PDF)</button><button class="btn sm" data-a="struk" data-id="${l.id}">Bukti transaksi</button></div>
+      <div class="small mute" style="margin-bottom:12px">Dokumen hanya dapat dilihat dan diunduh.</div>
+      <div class="agree">${docHtml(l.agreement || '', { no: docNo(l), kop: true })}</div>
+      <h3 style="margin-top:18px">Dokumen</h3>${thumbs(l)}
+      ${l.approved_at ? `<h3 style="margin-top:16px">Pembayaran</h3>${payTable(l)}` : ''}`, 'wide', draw);
     fillThumbs();
   };
   draw();
@@ -1092,12 +1184,12 @@ function aLoan(id) {
     const u = userById(l.user_id) || {}, b = l.approved_at ? bill(l, S.d.payments) : null;
     modal(`${mh(`${h(u.full_name || 'Akun terhapus')} · ke-${l.no}`)}<div class="row" style="margin-bottom:14px">${statusPill(l, b)}<span class="small mute">@${h(u.username)} · ${h(u.phone)} · diajukan ${wkt(l.applied_at)}</span></div>
       ${rekBox(l, u)}
-      ${l.status === 'pending' && !l.verified_at ? `<div class="card" style="margin-bottom:16px;padding:14px;border:1px solid var(--line);border-radius:18px"><h3 style="margin-top:0">Tahap 1 · Verifikasi</h3>${chips(autoChecks(l, u))}
+      ${l.status === 'pending' && !l.verified_at ? `<div class="card" style="margin-bottom:16px;padding:14px;border:1px solid var(--line);border-radius:18px"><h3 style="margin-top:0">Verifikasi</h3>${chips(autoChecks(l, u))}
         <form data-f="verify" data-id="${l.id}" style="margin-top:12px">${[['ktp', 'Foto KTP asli, terbaca, NIK & nama sama dengan data'], ['selfie', 'Wajah di selfie sama dengan foto KTP'], ['kk', 'KK asli, nama peminjam tercantum'], ['rek', 'Rekening atas nama peminjam sesuai KTP']]
           .map(([k, t]) => `<label class="chk"><input type="checkbox" name="${k}" required><span>${t}</span></label>`).join('')}
         <label class="f"><span>Catatan (opsional)</span><input class="i" name="note"></label><div class="err"></div>
-        <div class="row"><button class="btn ok">Verifikasi — lanjut kirim modal</button><button type="button" class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div></form></div>` : ''}
-      ${l.status === 'pending' && l.verified_at ? `<div class="note" style="margin-bottom:14px">✓ Diverifikasi ${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + h(l.verify.by) : ''}. <b>Tahap 2 · Kirim modal:</b> transfer ke rekening di atas, lalu unggah bukti.</div><div class="row" style="margin-bottom:16px"><button class="btn ok" data-a="approve" data-id="${l.id}">Kirim modal &amp; unggah bukti</button><button class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div>` : ''}
+        <div class="row"><button class="btn ok">Verifikasi</button><button type="button" class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div></form></div>` : ''}
+      ${l.status === 'pending' && l.verified_at ? `<div class="note" style="margin-bottom:14px">Terverifikasi ${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + h(l.verify.by) : ''}. Lanjutkan pencairan.</div><div class="row" style="margin-bottom:16px"><button class="btn ok" data-a="approve" data-id="${l.id}">Cairkan dana</button><button class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div>` : ''}
       ${l.status === 'active' ? vLoanCard(l, true) + `<form data-f="payadd" data-id="${l.id}" class="row" style="margin-top:12px"><input class="i" name="amount" inputmode="numeric" placeholder="Catat pembayaran (Rp)" style="max-width:220px" value="${b ? b.payoff : ''}"><input class="i" type="date" name="paid_on" value="${new Date().toISOString().slice(0, 10)}" style="max-width:170px"><button class="btn pri">Catat bayar</button>${b && b.payoff <= 0 ? `<button type="button" class="btn ok" data-a="markpaid" data-id="${l.id}">Tandai lunas</button>` : ''}</form>` : ''}
       ${l.status !== 'active' && l.approved_at ? `<h3 style="margin-top:16px">Pembayaran</h3>${payTable(l, true)}` : ''}
       <h3 style="margin-top:18px">Dokumen</h3>${thumbs(l)}
@@ -1111,8 +1203,8 @@ function aLoan(id) {
         <label class="f"><span>Tanggal cair</span><input class="i" type="date" name="approved_at" value="${l.approved_at ? l.approved_at.slice(0, 10) : ''}"></label>
         <label class="f"><span>Status</span><select class="i" name="status">${['pending', 'active', 'paid', 'rejected', 'cancelled'].map(s => `<option ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label></div>
         <label class="f"><span>Catatan</span><input class="i" name="note" value="${h(l.note || '')}"></label>
-        <div class="row" style="justify-content:space-between"><button class="btn pri">Simpan perubahan</button><span class="row"><button type="button" class="btn sm pri" data-a="jaminan" data-id="${l.user_id}">📄 Berkas jaminan</button><button type="button" class="btn sm" data-a="struk" data-id="${l.id}">🧾 Struk</button><button type="button" class="btn sm" data-a="print" data-id="${l.id}">Cetak perjanjian</button><button type="button" class="btn sm bad" data-a="loandel" data-id="${l.id}">Hapus pinjaman</button></span></div></form>
-      <h3 style="margin-top:18px">Perjanjian</h3><div class="agree">${h(l.agreement || '')}</div>`, 'wide', draw);
+        <div class="row" style="justify-content:space-between"><button class="btn pri">Simpan perubahan</button><span class="row"><button type="button" class="btn sm pri" data-a="jaminan" data-id="${l.user_id}">Berkas jaminan</button><button type="button" class="btn sm" data-a="struk" data-id="${l.id}">Bukti transaksi</button><button type="button" class="btn sm" data-a="print" data-id="${l.id}">Perjanjian (PDF)</button><button type="button" class="btn sm bad" data-a="loandel" data-id="${l.id}">Hapus pinjaman</button></span></div></form>
+      <h3 style="margin-top:18px">Perjanjian</h3><div class="agree">${docHtml(l.agreement || '', { no: docNo(l) })}</div>`, 'wide', draw);
     fillThumbs();
   };
   draw();
@@ -1121,27 +1213,27 @@ function aLoan(id) {
 const loanBank = (l, u) => l.bank?.bank_no ? l.bank : u || {};
 function rekBox(l, u) {
   const b = loanBank(l, u), ok = b.bank_no && nameOk(b.bank_holder, u.full_name);
-  return `<div class="note ${ok ? '' : 'bad'}" style="margin-bottom:14px">Transfer dana ke rekening peminjam: <b>${h(bankStr(b))}</b>${b.bank_no ? (ok ? ' · ✓ sesuai nama KTP' : ` · ✗ tidak sama dengan nama KTP (${h(u.full_name)})`) : ' — belum diisi'}${l.bank?.lender ? `<br>Rekening pemberi modal (cair &amp; kembali): <b>${h(bankStr(LENDER[l.bank.lender]))}</b>` : ''}</div>`;
+  return `<div class="note ${ok ? '' : 'bad'}" style="margin-bottom:14px">Rekening peminjam: <b>${h(bankStr(b))}</b>${b.bank_no ? (ok ? ', sesuai nama KTP' : `, tidak sesuai nama KTP (${h(u.full_name)})`) : ', belum diisi'}${l.bank?.lender ? `<br>Rekening pemberi pinjaman: <b>${h(bankStr(LENDER[l.bank.lender]))}</b>` : ''}</div>`;
 }
 function cairModal(id) {
   const l = S.d.loans.find(x => x.id === +id), u = userById(l.user_id) || {}, b = loanBank(l, u), ok = b.bank_no && nameOk(b.bank_holder, u.full_name);
-  modal(`${mh('Setujui &amp; cairkan')}<div class="lines"><div class="ln"><span>Peminjam (nama KTP)</span><b>${h(u.full_name)}</b></div>
+  modal(`${mh('Pencairan dana')}<div class="lines"><div class="ln"><span>Peminjam (nama KTP)</span><b>${h(u.full_name)}</b></div>
     <div class="ln"><span>Nominal ditransfer</span><b>${rp(l.amount)}</b></div><div class="ln"><span>Ke rekening</span><b>${h(bankStr(b))}</b></div></div>
-    ${ok ? `<div class="note" style="margin:10px 0">✓ Nama pemilik rekening sama dengan nama KTP. Transfer hanya ke rekening ini.</div>`
-      : `<div class="note bad" style="margin:10px 0">Rekening ${b.bank_no ? 'tidak atas nama peminjam sesuai KTP' : 'belum diisi'}. Pencairan tidak bisa dilakukan — minta peminjam memperbaiki rekening (atau ubah di data peminjam).</div>`}
+    ${ok ? `<div class="note" style="margin:10px 0">Nama rekening sesuai KTP.</div>`
+      : `<div class="note bad" style="margin:10px 0">Rekening ${b.bank_no ? 'tidak sesuai nama KTP' : 'belum diisi'}. Pencairan tidak dapat dilakukan.</div>`}
     <form data-f="cair" data-id="${l.id}"><div class="f"><span>Ditransfer dari rekening</span>${rekRow('mandiri', 'lender') + rekRow('bca', 'lender')}
-    <div class="small mute" style="margin-top:6px">Peminjam wajib mengembalikan ke rekening yang sama.</div></div>
-    <label class="f"><span>Foto / screenshot bukti transfer pencairan</span><input class="i" type="file" accept="image/*" id="cair-file" data-prev="cair-prev" required ${ok ? '' : 'disabled'}></label>
+</div>
+    <label class="f"><span>Bukti transfer</span><input class="i" type="file" accept="image/*" id="cair-file" data-prev="cair-prev" required ${ok ? '' : 'disabled'}></label>
     <div class="shot" id="cair-prev" style="display:none;margin-bottom:12px"></div>
     <label class="f"><span>Tanggal cair</span><input class="i" type="date" name="approved_at" value="${new Date().toISOString().slice(0, 10)}" ${ok ? '' : 'disabled'}></label>
-    <div class="err"></div><button class="btn ok wide" ${ok ? '' : 'disabled'}>Setujui &amp; simpan bukti</button></form>`);
+    <div class="err"></div><button class="btn ok wide" ${ok ? '' : 'disabled'}>Simpan pencairan</button></form>`);
 }
 function aUser(id) {
   const draw = () => {
     const u = S.d.users.find(x => x.id === +id); if (!u) return closeModal();
     const ls = S.d.loans.filter(l => l.user_id === u.id);
     modal(`${mh(h(u.full_name))}<div class="small mute" style="margin-bottom:14px">@${h(u.username)} · daftar ${tgl(u.created_at)} · login terakhir ${u.last_login ? wkt(u.last_login) : '-'}</div>
-      <div class="row" style="margin-bottom:14px"><button class="btn pri sm" data-a="jaminan" data-id="${u.id}">📄 Berkas jaminan (PDF)</button><span class="small mute">Data diri, dokumen, progres pinjaman &amp; perjanjian lengkap</span></div>
+      <div class="row" style="margin-bottom:14px"><button class="btn pri sm" data-a="jaminan" data-id="${u.id}">Berkas jaminan (PDF)</button></div>
       ${u.bank_no && !bankOk(u) ? `<div class="note bad" style="margin-bottom:12px">Nama rekening (${h(u.bank_holder)}) tidak sama dengan nama KTP (${h(u.full_name)}).</div>` : ''}
       <div class="lines" style="margin-bottom:12px">${ID_F.map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(u[k] || 'belum diisi')}</b></div>`).join('')}</div>
       <form data-f="useredit" data-id="${u.id}">${FIELDS.concat(BANK_F).map(([k, v]) => `<label class="f"><span>${v}</span>${k === 'address' ? `<textarea class="i" name="${k}" rows="2">${h(u[k] || '')}</textarea>` : `<input class="i" name="${k}" ${k === 'birth_date' ? 'type="date"' : ''} value="${h(u[k] || '')}">`}</label>`).join('')}
@@ -1154,251 +1246,307 @@ function aUser(id) {
   };
   draw();
 }
-async function printLoan(id) {
-  const l = S.d.loans.find(x => x.id === +id), w = window.open('', '_blank');
-  if (!w) return toast('Izinkan pop-up untuk mencetak');
-  w.document.write('<p style="font-family:sans-serif">Menyiapkan…</p>');
-  const imgs = {};
-  for (const k of ['ktp', 'kk', 'selfie', 'sign']) if (l.files[k]) imgs[k] = await loadImg(l.files[k]).catch(() => '');
-  w.document.open();
-  w.document.write(`<!doctype html><meta charset="utf-8"><title>Perjanjian ${h(userById(l.user_id)?.full_name || '')}</title><style>body{font:13px/1.55 Georgia,serif;max-width:760px;margin:30px auto;padding:0 20px;color:#000}pre{white-space:pre-wrap;font:inherit}.g{display:grid;grid-template-columns:1fr 1fr;gap:12px}img{width:100%;border:1px solid #ccc}.s{width:220px}</style>
-    <pre>${h(l.agreement)}</pre><p>Disetujui: ${wkt(l.applied_at)}${l.geo?.addr ? ' · ' + h(l.geo.addr) : ''}</p><p>PIHAK KEDUA,</p>${imgs.sign ? `<img class="s" src="${imgs.sign}">` : ''}<p><b>${h(userById(l.user_id)?.full_name || '')}</b></p>
-    <h3>Lampiran</h3><div class="g">${['ktp', 'kk', 'selfie'].map(k => imgs[k] ? `<div><b>${k.toUpperCase()}</b><img src="${imgs[k]}"></div>` : '').join('')}</div><script>setTimeout(()=>print(),400)<\/script>`);
-  w.document.close();
-}
-// ---------- berkas jaminan (admin): data diri + dokumen + progres + perjanjian lengkap → PDF A4 beberapa halaman ----------
+// ---------- mesin PDF dokumen resmi: kop + logo, margin 25/20 mm, Times, rata kiri-kanan, tiap butir/tabel utuh dalam satu halaman ----------
 const JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 // font standar PDF hanya Latin-1: ganti tanda baca Unicode, buang emoji
 const pdfTxt = s => String(s ?? '').replace(/[—–]/g, '-').replace(/…/g, '...').replace(/→/g, '->').replace(/[✓✔]/g, 'v').replace(/[✗✘]/g, 'x')
   .replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/[^\x09\x0a\x0d\x20-\x7e\xa0-\xff]/g, '');
 const ST_L = { pending: 'Menunggu persetujuan', active: 'Berjalan', paid: 'Lunas', rejected: 'Ditolak', cancelled: 'Dibatalkan' };
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+const KOP = { addr: 'Jl. Telaga Warna No. 31, Rejowinangun Utara, Magelang 56127', web: 'amatusapa.github.io' };
+const docNo = l => { const d = new Date(l.applied_at || Date.now()); return `${String(l.id).padStart(5, '0')}/AC-PK/${ROMAN[d.getMonth()]}/${d.getFullYear()}`; };
+// kode verifikasi = 12 hex SHA-256 isi dokumen; berubah bila data berubah
+async function docCode(t) {
+  try { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return [...new Uint8Array(d)].slice(0, 6).map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase().match(/.{4}/g).join('-'); } catch { return '-'; }
+}
+let LOGO_PNG = null;
+async function logoPng() {
+  if (LOGO_PNG) return LOGO_PNG;
+  const im = await imgEl('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(LOGO_SVG)), c = document.createElement('canvas'); c.width = c.height = 256;
+  c.getContext('2d').drawImage(im, 0, 0, 256, 256); return LOGO_PNG = c.toDataURL('image/png');
+}
 async function pdfImg(src) {
   const im = await imgEl(src), png = /^data:image\/png/.test(src);
   if (png || /^data:image\/jpe?g/.test(src)) return { data: src, fmt: png ? 'PNG' : 'JPEG', w: im.naturalWidth, h: im.naturalHeight };
   const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0);
   return { data: c.toDataURL('image/jpeg', .85), fmt: 'JPEG', w: c.width, h: c.height };
 }
-// jadwal cicilan dengan status per angsuran
+// PDF terkunci: terbuka tanpa kata sandi, hanya boleh dicetak (tidak bisa diedit / disalin)
+async function pdfKit() {
+  await loadScript(JSPDF);
+  const owner = Array.from(crypto.getRandomValues(new Uint8Array(16)), v => v.toString(16).padStart(2, '0')).join('');
+  const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true, encryption: { userPassword: '', ownerPassword: owner, userPermissions: ['print'] } });
+  const logo = await logoPng().catch(() => null);
+  const INK = [17, 24, 39], MUTE = [90, 98, 112], LINE = [150, 156, 166], SOFT = [236, 239, 244];
+  const K = { pdf, INK, MUTE, PW: 210, PH: 297, ML: 25, MR: 20, TOP: 29, BOT: 297 - 21, y: 45, tag: '', tags: {} };
+  K.CW = K.PW - K.ML - K.MR; K.XR = K.PW - K.MR;
+  K.font = (sz = 11, st = 'normal') => { pdf.setFont('times', st); pdf.setFontSize(sz); };
+  K.color = c => pdf.setTextColor(...c);
+  K.lh = (sz, f = 1.42) => sz * 0.3528 * f;
+  K.wrap = (t, w, sz, st) => { K.font(sz, st); return pdf.splitTextToSize(pdfTxt(t), w); };
+  K.page = () => { pdf.addPage(); K.y = K.TOP; K.tags[pdf.getNumberOfPages()] = K.tag; };
+  K.avail = () => K.BOT - K.TOP;
+  K.line = (ln, x, y, w, just) => {
+    const ws = ln.trim().split(/\s+/); if (!just || ws.length < 2) return pdf.text(ln.trim(), x, y);
+    const g = (w - ws.reduce((s, v) => s + pdf.getTextWidth(v), 0)) / (ws.length - 1);
+    if (g > pdf.getTextWidth(' ') * 4) return pdf.text(ln.trim(), x, y);
+    let X = x; ws.forEach(v => { pdf.text(v, X, y); X += pdf.getTextWidth(v) + g; });
+  };
+  // blok { h, draw }: sekelompok blok dipindah utuh ke halaman berikut bila tidak muat; judul tidak ditinggal sendirian di bawah halaman
+  K.put = (...bs) => {
+    bs = bs.flat().filter(Boolean); const tot = bs.reduce((s, b) => s + b.h, 0);
+    if (K.y + tot > K.BOT && K.y > K.TOP + .5 && tot <= K.avail()) K.page();
+    bs.forEach(b => { if (K.y > K.TOP + .5 && ((K.y + b.h > K.BOT && b.h <= K.avail()) || (b.head && K.y + b.h + 22 > K.BOT))) K.page(); b.draw(); });
+  };
+  K.gap = mm => ({ h: mm, draw() { K.y += mm; } });
+  K.dtitle = (t, no) => ({ h: 16 + (no ? 6 : 0), draw() {
+    const cx = K.ML + K.CW / 2; K.font(13, 'bold'); K.color(INK); const tt = pdfTxt(t), tw = pdf.getTextWidth(tt);
+    pdf.text(tt, cx, K.y + 5, { align: 'center' }); pdf.setDrawColor(...INK); pdf.setLineWidth(.35); pdf.line(cx - tw / 2, K.y + 6.3, cx + tw / 2, K.y + 6.3); K.y += 9;
+    if (no) { K.font(11); pdf.text(pdfTxt('Nomor: ' + no), cx, K.y + 4, { align: 'center' }); K.y += 6; } K.y += 7; } });
+  K.head = (t, o = {}) => { const sz = o.sz || 11.5, lh = K.lh(sz), bf = o.before ?? 4; return { head: true, h: bf + lh + 2, draw() {
+    K.y += bf; K.font(sz, 'bold'); K.color(INK);
+    if (o.al === 'center') pdf.text(pdfTxt(t), K.ML + K.CW / 2, K.y + lh * .74, { align: 'center' }); else pdf.text(pdfTxt(t), K.ML + (o.ind || 0), K.y + lh * .74);
+    K.y += lh + 2; } }; };
+  // paragraf; lab = penomoran "(1)" / "a." dengan indentasi gantung
+  K.para = (t, o = {}) => {
+    const sz = o.sz || 11, st = o.st || 'normal', ind = o.ind || 0, lw = o.lab ? (o.lw || 8) : 0, x = K.ML + ind + lw, w = K.CW - ind - lw, lh = K.lh(sz, o.f), al = o.al || 'justify', after = o.after ?? 2;
+    const ls = K.wrap(t, w, sz, st);
+    return { h: ls.length * lh + after, draw() {
+      ls.forEach((ln, i) => { if (K.y + lh > K.BOT) K.page(); K.font(sz, st); K.color(o.c || INK); const by = K.y + lh * .74;
+        if (i === 0 && o.lab) pdf.text(pdfTxt(o.lab), K.ML + ind, by);
+        if (al === 'center') pdf.text(ln, K.ML + K.CW / 2, by, { align: 'center' }); else K.line(ln, x, by, w, al === 'justify' && i < ls.length - 1);
+        K.y += lh; });
+      K.y += after; } };
+  };
+  // daftar "Label : isi"
+  K.kv = (rows, o = {}) => {
+    const sz = o.sz || 11, lw = o.lw || 48, x = K.ML + (o.ind || 0), vx = x + lw + 4, vw = K.XR - vx, lh = K.lh(sz, 1.32);
+    const R = rows.map(([k, v]) => { const kk = K.wrap(k, lw - 1, sz), vv = K.wrap(v == null || v === '' ? '-' : String(v), vw, sz, o.vst); return { kk, vv, n: Math.max(kk.length, vv.length) }; });
+    return { h: R.reduce((s, r) => s + r.n * lh, 0) + (o.after ?? 3), draw() {
+      R.forEach(r => { if (K.y + r.n * lh > K.BOT) K.page(); K.color(INK); const by = K.y + lh * .74;
+        K.font(sz); r.kk.forEach((ln, i) => pdf.text(ln, x, by + i * lh)); pdf.text(':', x + lw, by);
+        K.font(sz, o.vst); r.vv.forEach((ln, i) => pdf.text(ln, vx, by + i * lh)); K.y += r.n * lh; });
+      K.y += o.after ?? 3; } };
+  };
+  // tabel bergaris; utuh bila muat satu halaman, bila lebih panjang baris tidak terpotong dan kepala tabel diulang
+  K.table = (head, rows, ws, al = [], o = {}) => {
+    const sz = o.sz || 9.5, pad = 1.6, lh = K.lh(sz, 1.25), sum = ws.reduce((a, b) => a + b, 0), W_ = ws.map(w => w * K.CW / sum);
+    const cell = (c, i, st) => K.wrap(c == null || c === '' ? '-' : String(c), W_[i] - pad * 2, sz, st);
+    const H = head.map((c, i) => cell(c, i, 'bold')), hh = Math.max(...H.map(c => c.length)) * lh + pad * 2;
+    const R = rows.map(r => { const cs = r.map((c, i) => cell(c, i, o.bold0 && !i ? 'bold' : 'normal')); return { cs, h: Math.max(...cs.map(c => c.length)) * lh + pad * 2 }; });
+    const drawRow = (cs, hgt, bold) => {
+      if (bold) { pdf.setFillColor(...SOFT); pdf.rect(K.ML, K.y, K.CW, hgt, 'F'); }
+      pdf.setDrawColor(...LINE); pdf.setLineWidth(.2); let X = K.ML;
+      cs.forEach((c, i) => { pdf.rect(X, K.y, W_[i], hgt); K.font(sz, bold || (o.bold0 && !i) ? 'bold' : 'normal'); K.color(INK);
+        const tx = al[i] === 'r' ? X + W_[i] - pad : al[i] === 'c' ? X + W_[i] / 2 : X + pad;
+        c.forEach((ln, n) => pdf.text(ln, tx, K.y + pad + lh * .74 + n * lh, { align: al[i] === 'r' ? 'right' : al[i] === 'c' ? 'center' : 'left' })); X += W_[i]; });
+      K.y += hgt; };
+    const empty = lh + pad * 2;
+    return { h: hh + (R.length ? R.reduce((s, r) => s + r.h, 0) : empty) + (o.after ?? 4), draw() {
+      if (K.y + hh + (R[0]?.h || empty) > K.BOT) K.page(); drawRow(H, hh, true);
+      if (!R.length) { pdf.setDrawColor(...LINE); pdf.rect(K.ML, K.y, K.CW, empty); K.font(sz, 'italic'); K.color(MUTE); pdf.text('Tidak ada data.', K.ML + pad, K.y + pad + lh * .74); K.y += empty; }
+      R.forEach(r => { if (K.y + r.h > K.BOT) { K.page(); drawRow(H, hh, true); } drawRow(r.cs, r.h); });
+      K.y += o.after ?? 4; } };
+  };
+  // foto bergrid: tiap baris foto + keterangan satu blok utuh
+  K.photos = (items, cols = 2, boxH = 66) => {
+    const gap = 5, bw = (K.CW - gap * (cols - 1)) / cols, clh = K.lh(8.5, 1.25), out = [];
+    for (let i = 0; i < items.length; i += cols) {
+      const row = items.slice(i, i + cols), caps = row.map(r => K.wrap(r.cap || '', bw, 8.5)), hgt = boxH + 7 + Math.max(0, ...caps.map(c => c.length)) * clh + 4;
+      out.push({ h: hgt, draw() {
+        row.forEach((r, j) => { const X = K.ML + j * (bw + gap); pdf.setDrawColor(...LINE); pdf.setLineWidth(.25); pdf.rect(X, K.y, bw, boxH);
+          if (r.im) { const sc = Math.min((bw - 2) / r.im.w, (boxH - 2) / r.im.h), w = r.im.w * sc, hh = r.im.h * sc; pdf.addImage(r.im.data, r.im.fmt, X + (bw - w) / 2, K.y + (boxH - hh) / 2, w, hh, undefined, 'FAST'); }
+          else { K.font(9, 'italic'); K.color(MUTE); pdf.text('Gambar tidak tersedia', X + bw / 2, K.y + boxH / 2, { align: 'center' }); }
+          K.font(10, 'bold'); K.color(INK); pdf.text(pdfTxt(r.t), X, K.y + boxH + 4.6);
+          K.font(8.5); K.color(MUTE); caps[j].forEach((ln, n) => pdf.text(ln, X, K.y + boxH + 8.6 + n * clh)); });
+        K.y += hgt; } });
+    }
+    return out;
+  };
+  // kolom tanda tangan PARA PIHAK (+ kotak meterai)
+  K.sign = o => ({ h: (o.date ? 8 : 0) + 52, draw() {
+    const cw = (K.CW - 12) / 2, xs = [K.ML, K.ML + cw + 12]; let y0 = K.y;
+    if (o.date) { K.font(11); K.color(INK); pdf.text(pdfTxt(o.date), xs[1], y0 + 4); y0 += 8; }
+    [o.left, o.right].forEach((s, i) => { if (!s) return; const X = xs[i];
+      K.font(11, 'bold'); K.color(INK); pdf.text(pdfTxt(s.role), X, y0 + 4); K.font(10.5); pdf.text(pdfTxt(s.as || ''), X, y0 + 9);
+      if (s.meterai) { pdf.setDrawColor(...MUTE); pdf.setLineWidth(.25); pdf.setLineDashPattern([1, 1], 0); pdf.rect(X, y0 + 13, 24, 17); pdf.setLineDashPattern([], 0);
+        K.font(7); K.color(MUTE); pdf.text('METERAI', X + 12, y0 + 20.5, { align: 'center' }); pdf.text('Rp10.000', X + 12, y0 + 24, { align: 'center' }); }
+      if (s.img) { const hh = Math.min(22, s.img.h * 55 / s.img.w); pdf.addImage(s.img.data, s.img.fmt, X + (s.meterai ? 10 : 0), y0 + 12, s.img.w * hh / s.img.h, hh); }
+      else if (s.note) { K.font(9.5, 'italic'); K.color(MUTE); pdf.text(pdfTxt(s.note), X, y0 + 24); }
+      K.font(11, 'bold'); K.color(INK); const nm = pdfTxt(s.name || ''); pdf.text(nm, X, y0 + 41);
+      pdf.setDrawColor(...INK); pdf.setLineWidth(.3); pdf.line(X, y0 + 42.3, X + Math.max(52, pdf.getTextWidth(nm)), y0 + 42.3);
+      if (s.sub) { K.font(9); K.color(MUTE); pdf.text(pdfTxt(s.sub), X, y0 + 47); } });
+    K.y = y0 + 52; } });
+  // kop surat (halaman 1), kepala ringkas (halaman berikut), kaki: nomor, kode verifikasi, halaman
+  K.finish = o => {
+    const n = pdf.getNumberOfPages();
+    for (let i = 1; i <= n; i++) {
+      pdf.setPage(i); K.color(INK);
+      if (i === 1) {
+        if (logo) pdf.addImage(logo, 'PNG', K.ML, 12, 19, 19);
+        K.font(17, 'bold'); pdf.text('AMATUSAPA CASH', K.ML + 23, 20.5); K.font(10, 'italic'); K.color(MUTE); pdf.text('Layanan Pinjaman Dana Tunai', K.ML + 23, 25.5);
+        K.font(9); pdf.text(pdfTxt(`${KOP.addr}  |  ${KOP.web}`), K.ML + 23, 30);
+        pdf.setDrawColor(...INK); pdf.setLineWidth(.8); pdf.line(K.ML, 34.6, K.XR, 34.6); pdf.setLineWidth(.25); pdf.line(K.ML, 35.8, K.XR, 35.8);
+      } else {
+        if (logo) pdf.addImage(logo, 'PNG', K.ML, 10, 8.5, 8.5);
+        K.font(10, 'bold'); pdf.text('AMATUSAPA CASH', K.ML + 11, 15.6);
+        K.font(9, 'italic'); K.color(MUTE); pdf.text(pdfTxt(o.title), K.XR, K.tags[i] ? 13.2 : 15.6, { align: 'right' }); if (K.tags[i]) pdf.text(pdfTxt(K.tags[i]), K.XR, 17.4, { align: 'right' });
+        pdf.setDrawColor(...LINE); pdf.setLineWidth(.3); pdf.line(K.ML, 20.5, K.XR, 20.5);
+      }
+      pdf.setDrawColor(...LINE); pdf.setLineWidth(.3); pdf.line(K.ML, K.PH - 15, K.XR, K.PH - 15);
+      K.font(8.5); K.color(MUTE); pdf.text(pdfTxt(`Nomor ${o.no}${o.code ? '   |   Kode verifikasi ' + o.code : ''}`), K.ML, K.PH - 10.6);
+      pdf.text(`Halaman ${i} dari ${n}`, K.XR, K.PH - 10.6, { align: 'right' });
+      K.font(7.5, 'italic'); pdf.text(pdfTxt(`Dokumen elektronik ${APP}. Terkunci dari perubahan; setiap perubahan membatalkan kode verifikasi.`), K.ML, K.PH - 6.8);
+    }
+    pdf.setProperties({ title: o.title, subject: o.title, author: APP, creator: APP, keywords: o.no });
+    saveBlob(pdf.output('blob'), o.file.replace(/[^\w.-]+/g, '-') + '.pdf'); return n;
+  };
+  return K;
+}
+// teks perjanjian (baru maupun lama) → kelompok blok; tiap pasal satu kelompok utuh
+function docBlocks(K, text, no) {
+  return docParse(text).map(b =>
+    b.t === 'title' ? [K.dtitle(b.lines.join(' '), no)]
+    : b.t === 'kv' ? [b.head ? K.para(b.head, { st: 'bold', al: 'left', after: 1 }) : null, K.kv(b.rows, { ind: b.head ? 7 : 0, lw: 46 })]
+    : b.t === 'pasal' ? [K.head('Pasal ' + b.n, { al: 'center', sz: 11, before: 3 }), b.title ? K.para(b.title, { st: 'bold', al: 'center', after: 1.5 }) : null, ...b.items.map(it => K.para(it.txt, { lab: it.lab, after: 1.2 }))]
+    : [K.para(b.txt, { lab: b.lab, after: 2.5 })]);
+}
+const DOCK = [['ktp', 'Kartu Tanda Penduduk'], ['kk', 'Kartu Keluarga'], ['selfie', 'Swafoto memegang KTP']];
+const docMeta = f => !f?.meta ? '' : [f.meta.at ? (f.meta.source === 'camera' ? 'Diambil ' : 'Diunggah ') + wkt(f.meta.at) + (f.meta.tz ? ' ' + f.meta.tz : '') : '', f.meta.source === 'camera' ? 'kamera langsung' : f.meta.source === 'file' ? 'dari file' : f.meta.source ? 'sumber: ' + f.meta.source : '',
+  f.meta.lat != null ? `GPS ${(+f.meta.lat).toFixed(6)}, ${(+f.meta.lng).toFixed(6)}${f.meta.acc ? ' (±' + f.meta.acc + ' m)' : ''}` : '', f.meta.addr || ''].filter(Boolean).join(', ');
+const pdfImgId = async id => { try { return id ? await pdfImg(await loadImg(id)) : null; } catch { return null; } };
+const fileTag = s => String(s || '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+// tanda tangan perjanjian: PIHAK PERTAMA kiri, PIHAK KEDUA kanan dengan tanda tangan elektronik
+const signPK = async (K, l, u) => K.sign({ date: `Magelang, ${tglL(l.applied_at)}`,
+  left: { role: 'PIHAK PERTAMA', as: 'Pemberi Pinjaman', name: PEMODAL.name, note: l.approved_at ? 'Disetujui secara elektronik' : '', sub: l.approved_at ? 'Dicairkan ' + wkt(l.approved_at) : 'Belum dicairkan' },
+  right: { role: 'PIHAK KEDUA', as: 'Peminjam', name: u.full_name || u.username, img: await pdfImgId(l.files?.sign), sub: 'Tanda tangan elektronik ' + wkt(l.applied_at) } });
+
+// perjanjian lengkap → PDF terkunci (peminjam & admin)
+async function perjanjianPdf(id) {
+  const l = S.d.loans.find(x => x.id === +id); if (!l) return;
+  const u = (isAdmin() ? userById(l.user_id) : S.d.me) || {};
+  toast('Menyiapkan dokumen…');
+  try {
+    const K = await pdfKit(), no = docNo(l), code = await docCode(no + '\n' + (l.agreement || ''));
+    // paragraf penutup ("Demikian ...") selalu satu halaman dengan tanda tangan
+    const gs = docBlocks(K, l.agreement || '', no), last = gs.length > 1 ? gs.pop() : [];
+    gs.forEach(g => K.put(g)); K.put(last, K.gap(3), await signPK(K, l, u));
+    K.put(K.para(`Ditandatangani secara elektronik pada ${wkt(l.applied_at)}${l.geo?.lat != null ? ` di ${l.geo.addr ? l.geo.addr + ' ' : ''}(${(+l.geo.lat).toFixed(5)}, ${(+l.geo.lng).toFixed(5)})` : ''}.`, { sz: 9, c: K.MUTE, al: 'left' }));
+    const items = [];
+    for (const [k, t] of DOCK) if (l.files?.[k]) items.push({ t, cap: docMeta(fileById(l.files[k])), im: await pdfImgId(l.files[k]) });
+    if (items.length) { K.page(); const rows = K.photos(items, 2, 72); K.put(K.dtitle('LAMPIRAN DOKUMEN IDENTITAS'), rows[0]); rows.slice(1).forEach(r => K.put(r)); }
+    const n = K.finish({ title: 'Surat Perjanjian Pinjam-Meminjam Uang', no, code, file: `Perjanjian-${String(l.id).padStart(5, '0')}-${fileTag(u.full_name)}` });
+    toast(`PDF siap, ${n} halaman`);
+  } catch (e) { console.error(e); toast('Gagal membuat PDF'); }
+}
+// jadwal angsuran dengan status per angsuran
 function dueRows(l, b) {
   let cum = 0; const today = day0(Date.now());
   return b.dues.map(x => { cum += x.amt; const ok = l.status === 'paid' || b.paid + 0.5 >= cum; return { ...x, st: ok ? 'Lunas' : x.d < today ? 'Terlambat' : 'Belum jatuh tempo' }; });
 }
-const docMeta = f => !f?.meta ? '' : [f.meta.at ? (f.meta.source === 'camera' ? 'Diambil ' : 'Diunggah ') + wkt(f.meta.at) + (f.meta.tz ? ' ' + f.meta.tz : '') : '', f.meta.source === 'camera' ? 'kamera langsung' : f.meta.source === 'file' ? 'dari file' : f.meta.source ? 'sumber: ' + f.meta.source : '',
-  f.meta.lat != null ? `GPS ${(+f.meta.lat).toFixed(6)}, ${(+f.meta.lng).toFixed(6)}${f.meta.acc ? ' (±' + f.meta.acc + ' m)' : ''}` : '', f.meta.addr || ''].filter(Boolean).join(' · ');
-
+// ---------- berkas jaminan (admin): ringkasan, data diri, dokumen, pinjaman + perjanjian, aktivitas, pernyataan ----------
 async function jaminanPdf(uids) {
   const users = uids.map(userById).filter(Boolean);
   if (!users.length) return toast('Tidak ada peminjam');
   toast(`Menyiapkan berkas jaminan${users.length > 1 ? ` (${users.length} peminjam)` : ''}…`, 5000);
-  try { await loadScript(JSPDF); } catch { return toast('Gagal memuat pembuat PDF — periksa koneksi'); }
-  const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  const PW = 210, PH = 297, M = 15, CW = PW - M * 2, TOP = 20, BOT = PH - 16, INK = [15, 27, 45], MUTE = [91, 101, 119], LINE = [217, 222, 231];
-  const heads = {}, now = new Date();
-  let y = TOP, who = '';
-  const fnt = (sz, st = 'normal', fam = 'helvetica') => { pdf.setFont(fam, st); pdf.setFontSize(sz); };
-  const clr = c => pdf.setTextColor(...c);
-  const page = () => { pdf.addPage(); y = TOP; heads[pdf.getNumberOfPages()] = who; };
-  const need = hh => { if (y + hh > BOT) page(); };
-  const lines = (t, w) => pdf.splitTextToSize(pdfTxt(t), w);
-  const para = (t, o = {}) => {
-    fnt(o.sz || 9.5, o.st, o.fam); clr(o.c || INK); const lh = (o.sz || 9.5) * 0.42 + (o.gap ?? 1.2);
-    for (const ln of lines(t, o.w || CW)) { need(lh); pdf.text(ln, o.x ?? M, y + lh * 0.75); y += lh; }
-  };
-  const rule = (c = LINE) => { pdf.setDrawColor(...c); pdf.setLineWidth(0.3); pdf.line(M, y, PW - M, y); };
-  const h1 = t => { need(16); pdf.setFillColor(...INK); pdf.rect(M, y, CW, 8, 'F'); fnt(10.5, 'bold'); clr([255, 255, 255]); pdf.text(pdfTxt(t), M + 3, y + 5.5); y += 12; };
-  const h2 = t => { need(14); fnt(10.5, 'bold'); clr(INK); pdf.text(pdfTxt(t), M, y + 4); y += 6; rule(); y += 3; };
-  // pasangan label/isi dalam kolom
-  const kvs = (rows, cols = 2) => {
-    const gap = 6, cw = (CW - gap * (cols - 1)) / cols;
-    for (let i = 0; i < rows.length; i += cols) {
-      const chunk = rows.slice(i, i + cols).map(([k, v]) => { fnt(9.5, 'bold'); return { k, v: lines(v === '' || v == null ? '-' : v, cw) }; });
-      const hh = 4 + Math.max(...chunk.map(c => c.v.length)) * 4.3 + 2.2;
-      need(hh);
-      chunk.forEach((c, j) => { const X = M + j * (cw + gap); fnt(7.5); clr(MUTE); pdf.text(pdfTxt(c.k).toUpperCase(), X, y + 2.8); fnt(9.5, 'bold'); clr(INK); c.v.forEach((ln, n) => pdf.text(ln, X, y + 7 + n * 4.3)); });
-      y += hh;
-    }
-    y += 1;
-  };
-  // tabel dengan kepala diulang di halaman baru
-  const table = (head, rows, ws, al = []) => {
-    const W_ = ws.map(w => w * CW / ws.reduce((a, b) => a + b, 0)), pad = 1.6;
-    const hdr = () => { need(7); pdf.setFillColor(242, 244, 248); pdf.rect(M, y, CW, 6.5, 'F'); fnt(8, 'bold'); clr(MUTE);
-      let X = M; head.forEach((t, i) => { pdf.text(pdfTxt(t), al[i] === 'r' ? X + W_[i] - pad : X + pad, y + 4.4, { align: al[i] === 'r' ? 'right' : 'left' }); X += W_[i]; }); y += 6.5; };
-    hdr();
-    if (!rows.length) { fnt(8.5); clr(MUTE); need(6); pdf.text('Tidak ada data.', M + pad, y + 4.2); y += 7; return; }
-    for (const r of rows) {
-      fnt(8.5); const cells = r.map((c, i) => lines(c, W_[i] - pad * 2)), hh = Math.max(...cells.map(c => c.length)) * 3.8 + 2.6;
-      if (y + hh > BOT) { page(); hdr(); }
-      let X = M; cells.forEach((c, i) => { fnt(8.5, i === 0 ? 'bold' : 'normal'); clr(/Terlambat|Ditolak/.test(r[i]) ? [192, 57, 43] : /^(Lunas|Diterima)$/.test(r[i]) ? [30, 142, 78] : INK);
-        c.forEach((ln, n) => pdf.text(ln, al[i] === 'r' ? X + W_[i] - pad : X + pad, y + 3.9 + n * 3.8, { align: al[i] === 'r' ? 'right' : 'left' })); X += W_[i]; });
-      y += hh; pdf.setDrawColor(...LINE); pdf.setLineWidth(0.2); pdf.line(M, y, PW - M, y);
-    }
-    y += 3;
-  };
-  // foto dalam grid; keterangan di bawah tiap foto
-  const gallery = async (items, cols = 2, boxH = 72) => {
-    const ok = [];
-    for (const it of items) { if (!it.id) continue; try { ok.push({ ...it, im: await pdfImg(await loadImg(it.id)) }); } catch { ok.push({ ...it, im: null }); } }
-    const gap = 5, bw = (CW - gap * (cols - 1)) / cols;
-    for (let i = 0; i < ok.length; i += cols) {
-      const row = ok.slice(i, i + cols); fnt(7.2);
-      const capH = Math.max(...row.map(r => lines(r.cap || '', bw).length)) * 3.2 + 6;
-      need(boxH + capH + 2);
-      row.forEach((r, j) => {
-        const X = M + j * (bw + gap);
-        pdf.setDrawColor(...LINE); pdf.setLineWidth(0.3); pdf.rect(X, y, bw, boxH);
-        if (r.im) { const sc = Math.min((bw - 2) / r.im.w, (boxH - 2) / r.im.h), w = r.im.w * sc, hh = r.im.h * sc; pdf.addImage(r.im.data, r.im.fmt, X + (bw - w) / 2, y + (boxH - hh) / 2, w, hh, undefined, 'FAST'); }
-        else { fnt(8); clr(MUTE); pdf.text('Gambar tidak dapat dimuat', X + bw / 2, y + boxH / 2, { align: 'center' }); }
-        fnt(8.5, 'bold'); clr(INK); pdf.text(pdfTxt(r.t), X, y + boxH + 4);
-        fnt(7.2); clr(MUTE); lines(r.cap || '', bw).forEach((ln, n) => pdf.text(ln, X, y + boxH + 7.5 + n * 3.2));
-      });
-      y += boxH + capH + 2;
-    }
-  };
-  const sign = async (id, X, w = 60) => { if (!id) return 0; try { const im = await pdfImg(await loadImg(id)), hh = Math.min(26, im.h * w / im.w); pdf.addImage(im.data, im.fmt, X, y, im.w * hh / im.h, hh); return hh; } catch { return 0; } };
-
+  let K; try { K = await pdfKit(); } catch { return toast('Gagal memuat pembuat PDF, periksa koneksi'); }
+  const now = new Date(), PST = { ok: 'Diterima', pending: 'Menunggu verifikasi', rejected: 'Ditolak' }, sub = t => K.head(t, { sz: 10.5, before: 2.5 });
+  const nos = [];
+  try {
   for (const [ui, u] of users.entries()) {
-    who = `${u.full_name || u.username} · NIK ${u.nik || '-'}`;
-    if (ui) page(); else heads[1] = who;
-    const ls = S.d.loans.filter(l => l.user_id === u.id).sort((a, b) => b.id - a.id);
+    K.tag = `${u.full_name || u.username}, NIK ${u.nik || '-'}`;
+    if (ui) K.page(); else K.tags[1] = K.tag;
+    const no = `${String(u.id).padStart(5, '0')}/AC-BJ/${ROMAN[now.getMonth()]}/${now.getFullYear()}`; nos.push(no);
+    const ls = S.d.loans.filter(l => l.user_id === u.id).sort((a, b) => a.id - b.id);
     const pays = S.d.payments.filter(p => p.user_id === u.id || ls.some(l => l.id === p.loan_id));
     const bs = Object.fromEntries(ls.filter(l => l.approved_at).map(l => [l.id, bill(l, S.d.payments)]));
     const act = ls.filter(l => l.status === 'active'), late = act.filter(l => bs[l.id]?.overdue);
-    // judul
-    fnt(17, 'bold'); clr(INK); pdf.text('BERKAS JAMINAN PEMINJAM', M, y + 6); y += 9;
-    fnt(9); clr(MUTE); pdf.text(pdfTxt(`No. BJ-${String(u.id).padStart(5, '0')}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')} · dicetak ${wkt(now)} oleh @${S.d.me.username}`), M, y + 3); y += 7;
-    para(`Berkas ini memuat data diri, dokumen identitas, perjanjian pinjam modal, dan riwayat pinjaman serta pembayaran PIHAK KEDUA sebagaimana tersimpan di sistem Modalin, sebagai bukti dan jaminan atas perjanjian antara PIHAK PERTAMA (${PEMODAL.name}) dan PIHAK KEDUA (${u.full_name || u.username}).`, { sz: 9, c: MUTE });
-    y += 3;
-    // ringkasan
     const lent = ls.filter(l => l.approved_at).reduce((s, l) => s + +l.amount, 0), recv = pays.filter(p => p.status === 'ok').reduce((s, p) => s + +p.amount, 0);
     const owe = act.reduce((s, l) => s + bs[l.id].remainingContract, 0), lateD = late.reduce((s, l) => s + bs[l.id].lateDays, 0);
-    const kp = [['Jumlah pinjaman', String(ls.length)], ['Total dicairkan', rp(lent)], ['Total diterima', rp(recv)], ['Sisa tagihan', rp(owe)],
-      ['Status', late.length ? `Terlambat ${lateD} hari` : act.length ? 'Lancar' : ls.some(l => l.status === 'pending') ? 'Menunggu' : 'Tidak ada berjalan']];
-    need(18); const kw = (CW - 4 * 3) / 5;
-    kp.forEach(([k, v], i) => { const X = M + i * (kw + 3); pdf.setFillColor(242, 244, 248); pdf.roundedRect(X, y, kw, 15, 2, 2, 'F');
-      fnt(6.8); clr(MUTE); pdf.text(pdfTxt(k).toUpperCase(), X + 2.5, y + 4.6); let sz = 10; fnt(sz, 'bold'); while (sz > 7 && pdf.getTextWidth(pdfTxt(v)) > kw - 5) fnt(sz -= 0.5, 'bold'); clr(i === 4 && late.length ? [192, 57, 43] : INK); pdf.text(pdfTxt(v), X + 2.5, y + 11); });
-    y += 21;
 
-    h1('1. DATA DIRI PEMINJAM');
-    kvs([...ID_F, ...FIELDS, ...BANK_F].map(([k, v]) => [v, k === 'birth_date' ? (u[k] ? tglL(u[k]) : '-') : u[k]])
+    K.put(K.dtitle('BERKAS JAMINAN PEMINJAM', no),
+      K.para(`Berkas ini disusun dari sistem ${APP} pada ${wkt(now)} sebagai bukti dan jaminan atas perjanjian pinjam-meminjam uang antara ${PEMODAL.name} selaku PIHAK PERTAMA dan ${u.full_name || u.username} selaku PIHAK KEDUA, sebagaimana dimaksud Pasal 1754 KUHPerdata serta Pasal 5 Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik beserta perubahannya.`, { after: 3 }));
+    K.put(K.head('I. RINGKASAN'), K.kv([['Jumlah pinjaman', `${ls.length} pinjaman`], ['Total dicairkan', rp(lent)], ['Total pembayaran diterima', rp(recv)], ['Sisa kewajiban', rp(owe)],
+      ['Status', late.length ? `Terlambat ${lateD} hari` : act.length ? 'Lancar' : ls.some(l => l.status === 'pending') ? 'Menunggu persetujuan' : 'Tidak ada pinjaman berjalan']], { lw: 55 }));
+    K.put(K.head('II. DATA DIRI PEMINJAM'), K.kv([...ID_F, ...FIELDS, ...BANK_F].map(([k, v]) => [v, k === 'birth_date' ? (u[k] ? tglL(u[k]) : '-') : u[k]])
       .concat([['Akun', '@' + u.username], ['Terdaftar', u.created_at ? wkt(u.created_at) : '-'], ['Login terakhir', u.last_login ? wkt(u.last_login) : '-'],
-        ['Status akun', u.active ? 'Aktif' : 'Nonaktif'], ['Batas pinjaman berikutnya', rp(u.limit)], ['Rekening a.n. sesuai KTP', u.bank_no ? (nameOk(u.bank_holder, u.full_name) ? 'Ya' : 'TIDAK SESUAI') : 'Belum diisi']]));
+        ['Status akun', u.active ? 'Aktif' : 'Nonaktif'], ['Batas pinjaman berikutnya', rp(u.limit)], ['Rekening sesuai KTP', u.bank_no ? (nameOk(u.bank_holder, u.full_name) ? 'Ya' : 'Tidak sesuai') : 'Belum diisi']]), { lw: 55 }));
 
-    h1('2. DOKUMEN IDENTITAS');
-    const docL = ls.find(l => l.files?.ktp || l.files?.kk || l.files?.selfie), DOCK = [['ktp', 'Foto KTP'], ['kk', 'Foto Kartu Keluarga'], ['selfie', 'Selfie memegang KTP']];
+    const docL = ls.slice().reverse().find(l => l.files?.ktp || l.files?.kk || l.files?.selfie);
     if (docL) {
-      para(`Dari pengajuan pinjaman ke-${docL.no} (${wkt(docL.applied_at)}). KTP dan KK diunggah peminjam; selfie memegang KTP asli diambil langsung dari kamera dengan cap waktu, lokasi, dan koordinat tercetak pada foto.`, { sz: 8.5, c: MUTE }); y += 1;
-      await gallery(DOCK.map(([k, t]) => ({ id: docL.files[k], t, cap: docMeta(fileById(docL.files[k])) })), 2, 68);
-    } else para('Belum ada dokumen (peminjam belum pernah mengajukan pinjaman).', { c: MUTE });
+      const items = []; for (const [k, t] of DOCK) if (docL.files[k]) items.push({ t, cap: docMeta(fileById(docL.files[k])), im: await pdfImgId(docL.files[k]) });
+      const rows = K.photos(items, 2, 66);
+      K.put(K.head('III. DOKUMEN IDENTITAS'), K.para(`Diserahkan pada pengajuan pinjaman ke-${docL.no}, ${wkt(docL.applied_at)}.`, { sz: 10.5 }), rows[0]); rows.slice(1).forEach(r => K.put(r));
+    } else K.put(K.head('III. DOKUMEN IDENTITAS'), K.para('Belum ada dokumen.', { c: K.MUTE }));
 
-    h1('3. PINJAMAN, PROGRES & PERJANJIAN');
-    if (!ls.length) para('Belum ada pinjaman.', { c: MUTE });
-    for (const l of ls) {
+    const h4 = K.head('IV. PINJAMAN DAN PERJANJIAN');
+    if (!ls.length) K.put(h4, K.para('Belum ada pinjaman.', { c: K.MUTE }));
+    for (const [li, l] of ls.entries()) {
       const b = bs[l.id], pl = plan(+l.amount, +l.tenor, +l.rate), src = l.bank?.lender ? LENDER[l.bank.lender] : null, dst = loanBank(l, u);
-      need(40); y += 2;
-      h2(`Pinjaman ke-${l.no} · No. MDL-${String(l.id).padStart(5, '0')}-${l.no} · ${ST_L[l.status] || l.status}${b?.overdue ? ' · TERLAMBAT' : ''}`);
       const endD = l.approved_at ? new Date(new Date(l.approved_at).getTime() + l.tenor * 30 * DAY) : null;
-      kvs([['Pokok pinjaman', rp(l.amount)], ['Tenor', `${l.tenor} bulan (1 bulan = 30 hari)`], ['Bunga', `${+l.rate}% / bulan (${rp(pl.I)})`], ['Cicilan / bulan', rp(pl.inst)],
-        ['Total kontrak', rp(pl.total)], ['Denda keterlambatan', `${+l.late_rate}% / hari dari sisa pinjaman`],
-        ['Diajukan', wkt(l.applied_at)], ['Diverifikasi admin', l.verified_at ? `${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + l.verify.by : ''}` : '-'],
-        ['Dicairkan', l.approved_at ? wkt(l.approved_at) : '-'], [l.status === 'paid' ? 'Lunas pada' : 'Jatuh tempo akhir', l.status === 'paid' && l.paid_at ? wkt(l.paid_at) : endD ? tglL(endD) : '-'],
-        ['Pencairan dari rekening', src ? bankStr(src) : '-'], ['Diterima di rekening', bankStr(dst)],
-        ['Pengembalian wajib ke', src ? bankStr(src) + ' (rekening sama)' : '-'], ['Lokasi saat tanda tangan', l.geo?.lat != null ? `${l.geo.addr ? l.geo.addr + ' · ' : ''}${(+l.geo.lat).toFixed(5)}, ${(+l.geo.lng).toFixed(5)}` : '-']]
-        .concat(l.note ? [['Catatan admin', l.note]] : []).concat(l.verify?.note ? [['Catatan verifikasi', l.verify.note]] : []));
+      K.put(li ? null : h4, K.head(`${li + 1}. Pinjaman ke-${l.no}, Nomor ${docNo(l)}`, { sz: 11, before: 4 }), K.kv([['Status', (ST_L[l.status] || l.status) + (b?.overdue ? ', terlambat' : '')],
+        ['Pokok pinjaman', rpT(+l.amount)], ['Tenor', `${l.tenor} bulan (30 hari per bulan)`], ['Bunga', `${+l.rate}% per bulan (${rp(pl.I)})`], ['Angsuran', rp(pl.inst) + ' per bulan'],
+        ['Total kewajiban', rp(pl.total)], ['Denda keterlambatan', `${+l.late_rate}% per hari dari sisa kewajiban`], ['Diajukan', wkt(l.applied_at)],
+        ['Diverifikasi', l.verified_at ? `${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + l.verify.by : ''}` : '-'], ['Dicairkan', l.approved_at ? wkt(l.approved_at) : '-'],
+        [l.status === 'paid' ? 'Lunas pada' : 'Jatuh tempo akhir', l.status === 'paid' && l.paid_at ? wkt(l.paid_at) : endD ? tglL(endD) : '-'],
+        ['Rekening pencairan', src ? bankStr(src) : '-'], ['Rekening penerima', bankStr(dst)], ['Rekening pembayaran', src ? bankStr(src) : '-'],
+        ['Lokasi tanda tangan', l.geo?.lat != null ? `${l.geo.addr ? l.geo.addr + ', ' : ''}${(+l.geo.lat).toFixed(5)}, ${(+l.geo.lng).toFixed(5)}` : '-']]
+        .concat(l.note ? [['Catatan', l.note]] : []).concat(l.verify?.note ? [['Catatan verifikasi', l.verify.note]] : []), { sz: 10.5, lw: 50 }));
       if (l.verified_at) {
-        const vc = [['ktp', 'KTP asli & data sama'], ['selfie', 'Wajah selfie = foto KTP'], ['kk', 'KK asli, nama tercantum'], ['rek', 'Rekening a.n. sesuai KTP']];
-        para('Pemeriksaan admin: ' + vc.map(([k, t]) => `[${l.verify?.[k] ? 'v' : ' '}] ${t}`).join('   '), { sz: 8.5 }); y += 2;
+        const vc = [['ktp', 'KTP asli dan data sesuai'], ['selfie', 'Wajah swafoto sesuai KTP'], ['kk', 'KK asli, nama tercantum'], ['rek', 'Rekening sesuai KTP']];
+        K.put(sub('Hasil pemeriksaan'), K.table(['Pemeriksaan', 'Hasil'], vc.map(([k, t]) => [t, l.verify?.[k] ? 'Sesuai' : 'Tidak diperiksa']), [70, 30]));
       }
       if (b) {
-        // progres pembayaran
-        const tot = b.contract + b.denda, pct = tot ? Math.min(1, b.paid / tot) : 0;
-        need(16); fnt(9, 'bold'); clr(INK); pdf.text(pdfTxt(`Progres: terbayar ${rp(b.paid)} dari ${rp(tot)} (${Math.round(pct * 100)}%)`), M, y + 4);
-        pdf.setFillColor(230, 234, 241); pdf.roundedRect(M, y + 6.5, CW, 4, 2, 2, 'F');
-        if (pct > 0) { pdf.setFillColor(...(b.overdue ? [192, 57, 43] : [30, 142, 78])); pdf.roundedRect(M, y + 6.5, Math.max(4, CW * pct), 4, 2, 2, 'F'); }
-        y += 14;
-        kvs([['Sudah dibayar (diverifikasi)', rp(b.paid)], ['Denda berjalan', `${rp(b.denda)} (${b.lateDays} hari terlambat)`],
-          ['Sisa kontrak + denda', rp(l.status === 'paid' ? 0 : b.remainingContract)], ['Pelunasan hari ini', rp(l.status === 'paid' ? 0 : b.payoff)],
-          ['Cicilan berikutnya', l.status === 'active' && b.next ? `Ke-${b.next.k} · ${rp(b.next.amt)} · ${tglL(b.next.d)}${b.next.overdue ? ' (lewat tempo)' : ''}` : '-']], 2);
-        fnt(9, 'bold'); clr(INK); need(8); pdf.text('Jadwal cicilan', M, y + 3); y += 5;
-        table(['Ke', 'Jatuh tempo', 'Nominal', 'Status'], dueRows(l, b).map(r => [String(r.k), tglL(r.d), rp(r.amt), r.st]), [8, 40, 30, 30], ['', '', 'r', '']);
+        const tot = b.contract + b.denda;
+        K.put(sub('Keadaan pembayaran'), K.kv([['Terbayar', `${rp(b.paid)} dari ${rp(tot)} (${tot ? Math.round(Math.min(1, b.paid / tot) * 100) : 0}%)`], ['Denda berjalan', `${rp(b.denda)} (${b.lateDays} hari)`],
+          ['Sisa kewajiban', rp(l.status === 'paid' ? 0 : b.remainingContract)], ['Pelunasan per hari ini', rp(l.status === 'paid' ? 0 : b.payoff)],
+          ['Angsuran berikutnya', l.status === 'active' && b.next ? `Ke-${b.next.k}, ${rp(b.next.amt)}, ${tglL(b.next.d)}${b.next.overdue ? ' (lewat jatuh tempo)' : ''}` : '-']], { sz: 10.5, lw: 50 }));
+        K.put(sub('Jadwal angsuran'), K.table(['Ke', 'Jatuh tempo', 'Nominal', 'Status'], dueRows(l, b).map(r => [String(r.k), tglL(r.d), rp(r.amt), r.st]), [10, 40, 30, 30], ['c', '', 'r', '']));
       }
       const lp = S.d.payments.filter(p => p.loan_id === l.id).sort((a, c) => new Date(a.paid_on) - new Date(c.paid_on));
-      if (l.approved_at || lp.length) {
-        fnt(9, 'bold'); clr(INK); need(8); pdf.text('Riwayat pembayaran', M, y + 3); y += 5;
-        table(['Tanggal', 'Nominal', 'Dari rekening', 'Ke rekening', 'Status', 'Catatan'],
-          lp.map(p => [wkt(p.paid_on), rp(p.amount), p.from_bank || (p.by_admin ? 'dicatat admin' : '-'), p.to_bank || '-', { ok: 'Diterima', pending: 'Menunggu verifikasi', rejected: 'Ditolak' }[p.status] || p.status, p.note || '']),
-          [24, 22, 38, 38, 20, 22], ['', 'r']);
-      }
-      // bukti transfer & dokumen pinjaman ini (bila berbeda dari bagian 2)
+      if (l.approved_at || lp.length) K.put(sub('Riwayat pembayaran'), K.table(['Tanggal', 'Nominal', 'Dari rekening', 'Ke rekening', 'Status', 'Catatan'],
+        lp.map(p => [wkt(p.paid_on), rp(p.amount), p.from_bank || (p.by_admin ? 'Dicatat admin' : '-'), p.to_bank || '-', PST[p.status] || p.status, p.note || '']), [22, 18, 36, 36, 18, 20], ['', 'r']));
       const ev = [];
-      if (l.files?.cair) ev.push({ id: l.files.cair, t: 'Bukti pencairan', cap: (fileById(l.files.cair)?.meta?.at ? 'diunggah ' + wkt(fileById(l.files.cair).meta.at) + ' · ' : '') + rp(l.amount) });
-      lp.filter(p => p.file_id).forEach(p => ev.push({ id: p.file_id, t: `Bukti bayar ${tgl(p.paid_on)}`, cap: `${rp(p.amount)} · ${({ ok: 'Diterima', pending: 'Menunggu', rejected: 'Ditolak' })[p.status] || p.status}` }));
-      if (docL && l !== docL) DOCK.forEach(([k, t]) => { if (l.files?.[k] && l.files[k] !== docL.files[k]) ev.push({ id: l.files[k], t: `${t} (pengajuan ke-${l.no})`, cap: docMeta(fileById(l.files[k])) }); });
-      if (ev.length) { fnt(9, 'bold'); clr(INK); need(8); pdf.text('Bukti transfer & dokumen', M, y + 3); y += 6; await gallery(ev, 3, 52); }
-      // perjanjian lengkap + tanda tangan
+      if (l.files?.cair) ev.push({ t: 'Bukti pencairan', cap: (fileById(l.files.cair)?.meta?.at ? wkt(fileById(l.files.cair).meta.at) + ', ' : '') + rp(l.amount), im: await pdfImgId(l.files.cair) });
+      for (const p of lp.filter(p => p.file_id)) ev.push({ t: `Bukti bayar ${tgl(p.paid_on)}`, cap: `${rp(p.amount)}, ${(PST[p.status] || p.status).toLowerCase()}`, im: await pdfImgId(p.file_id) });
+      if (docL && l !== docL) for (const [k, t] of DOCK) if (l.files?.[k] && l.files[k] !== docL.files[k]) ev.push({ t: `${t} (ke-${l.no})`, cap: docMeta(fileById(l.files[k])), im: await pdfImgId(l.files[k]) });
+      if (ev.length) { const rows = K.photos(ev, 3, 52); K.put(sub('Bukti transfer dan dokumen'), rows[0]); rows.slice(1).forEach(r => K.put(r)); }
       if (l.agreement) {
-        need(30); fnt(9, 'bold'); clr(INK); pdf.text(`Perjanjian lengkap (disetujui elektronik ${pdfTxt(wkt(l.applied_at))})`, M, y + 3); y += 6;
-        pdf.setFillColor(248, 249, 252); para(l.agreement, { sz: 8, fam: 'courier', gap: 0.9 }); y += 3;
-        need(42); fnt(8.5); clr(MUTE); pdf.text('PIHAK KEDUA,', M, y + 3); pdf.text('PIHAK PERTAMA,', PW - M - 60, y + 3); y += 5;
-        const sh = await sign(l.files?.sign, M); y += Math.max(sh, 18) + 2;
-        fnt(9.5, 'bold'); clr(INK); pdf.text(pdfTxt(u.full_name || ''), M, y + 3); pdf.text(pdfTxt(PEMODAL.name), PW - M - 60, y + 3); y += 4;
-        fnt(7.5); clr(MUTE); pdf.text(pdfTxt(`Tanda tangan digital · ${wkt(l.applied_at)}`), M, y + 3);
-        if (l.approved_at) pdf.text(pdfTxt(`Disetujui & dicairkan ${wkt(l.approved_at)}`), PW - M - 60, y + 3); y += 9;
+        K.page(); const gs = docBlocks(K, l.agreement, docNo(l)), last = gs.length > 1 ? gs.pop() : [];
+        gs.forEach(g => K.put(g)); K.put(last, K.gap(3), await signPK(K, l, u));
       }
     }
 
-    // aktivitas akun (log server menyimpan 300 entri terakhir)
     const lids = new Set(ls.map(l => l.id)), pids = new Set(pays.map(p => p.id));
     const lg = (S.d.log || []).filter(g => g.user_id === u.id || [g.detail?.loan, g.detail?.loan_id].some(v => lids.has(+v)) || (g.detail?.id != null && /pay|bayar/i.test(g.action) ? pids.has(+g.detail.id) : g.detail?.id != null && lids.has(+g.detail.id)) || [g.detail?.user, g.detail?.user_id].some(v => +v === u.id));
-    h1('4. RIWAYAT AKTIVITAS');
-    table(['Waktu', 'Akun', 'Aktivitas', 'Detail'], lg.slice().reverse().map(g => [wkt(g.at), '@' + (g.username || '-'), g.action,
-      g.detail && Object.keys(g.detail).length ? Object.entries(g.detail).map(([k, v]) => k + ': ' + (typeof v === 'object' ? JSON.stringify(v) : v)).join(' · ').slice(0, 220) : '']), [26, 20, 30, 64]);
+    K.put(K.head('V. RIWAYAT AKTIVITAS'), K.table(['Waktu', 'Akun', 'Aktivitas', 'Keterangan'], lg.slice().reverse().map(g => [wkt(g.at), '@' + (g.username || '-'), g.action,
+      g.detail && Object.keys(g.detail).length ? Object.entries(g.detail).map(([k, v]) => k + ': ' + (typeof v === 'object' ? JSON.stringify(v) : v)).join(', ').slice(0, 220) : '']), [26, 18, 28, 68], [], { sz: 9 }));
 
-    // pernyataan penutup + tempat tanda tangan basah & meterai
-    h1('5. PERNYATAAN');
-    para(`Data, dokumen, perjanjian, dan riwayat transaksi di atas diambil langsung dari sistem Modalin pada ${wkt(now)}. PIHAK KEDUA telah menyetujui perjanjian secara elektronik dengan tanda tangan digital, selfie memegang KTP asli berwaktu & berkoordinat, dan rekening atas nama sendiri. Berkas ini dapat dicetak dan ditandatangani ulang di atas meterai sebagai penguat jaminan.`, { sz: 9 });
-    y += 4; need(52);
-    const sx = PW - M - 64;
-    fnt(8.5); clr(MUTE); pdf.text(pdfTxt(`Magelang, ${tglL(now)}`), sx, y + 3); y += 7;
-    pdf.text('PIHAK KEDUA (Peminjam),', M, y + 3); pdf.text('PIHAK PERTAMA (Pemberi Modal),', sx, y + 3); y += 5;
-    pdf.setDrawColor(...MUTE); pdf.setLineDashPattern([1, 1], 0); pdf.rect(M, y, 26, 18); pdf.setLineDashPattern([], 0);
-    fnt(6.5); pdf.text('Meterai', M + 13, y + 8, { align: 'center' }); pdf.text('Rp10.000', M + 13, y + 11.5, { align: 'center' });
-    y += 30; fnt(9.5, 'bold'); clr(INK); pdf.text(pdfTxt(u.full_name || ''), M, y); pdf.text(pdfTxt(PEMODAL.name), sx, y);
-    pdf.setDrawColor(...INK); pdf.setLineWidth(0.3); pdf.line(M, y + 1.5, M + 64, y + 1.5); pdf.line(sx, y + 1.5, PW - M, y + 1.5);
-    fnt(7.5, 'normal'); clr(MUTE); pdf.text(pdfTxt(`NIK ${u.nik || '-'}`), M, y + 5.5); y += 8;
-  }
-
-  // kepala & kaki tiap halaman
-  const n = pdf.getNumberOfPages();
-  for (let i = 1; i <= n; i++) {
-    pdf.setPage(i); pdf.setFillColor(...INK); pdf.rect(0, 0, PW, 11, 'F');
-    fnt(8.5, 'bold'); clr([255, 255, 255]); pdf.text('MODALIN · Berkas Jaminan Peminjam', M, 7);
-    fnt(8); pdf.text(pdfTxt(heads[i] || ''), PW - M, 7, { align: 'right' });
-    pdf.setDrawColor(...LINE); pdf.setLineWidth(0.3); pdf.line(M, PH - 11, PW - M, PH - 11);
-    fnt(7.2); clr(MUTE); pdf.text(pdfTxt(`RAHASIA · berisi data pribadi · dicetak ${wkt(now)} · amatusapa.github.io`), M, PH - 6.5);
-    pdf.text(`Halaman ${i} / ${n}`, PW - M, PH - 6.5, { align: 'right' });
+    K.put(K.head('VI. PERNYATAAN'),
+      K.para(`Data, dokumen, perjanjian, dan riwayat transaksi di atas diambil langsung dari sistem ${APP} pada ${wkt(now)}. PIHAK KEDUA telah menyetujui perjanjian secara elektronik dengan tanda tangan elektronik, swafoto memegang KTP berwaktu dan berkoordinat, serta rekening atas nama sendiri. Berkas ini dapat dicetak dan ditandatangani di atas meterai sebagai penguat jaminan.`, { after: 4 }),
+      K.sign({ date: `Magelang, ${tglL(now)}`, left: { role: 'PIHAK PERTAMA', as: 'Pemberi Pinjaman', name: PEMODAL.name }, right: { role: 'PIHAK KEDUA', as: 'Peminjam', name: u.full_name || u.username, sub: 'NIK ' + (u.nik || '-'), meterai: true } }));
   }
   const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-  const name = users.length > 1 ? `Berkas-Jaminan-Semua-Peminjam-${ymd}` : `Berkas-Jaminan-${(users[0].full_name || users[0].username).replace(/[^\w]+/g, '-')}-${ymd}`;
-  pdf.setProperties({ title: name.replace(/-/g, ' '), subject: 'Berkas jaminan peminjam Modalin', author: 'Modalin', creator: 'Modalin' });
-  saveBlob(pdf.output('blob'), name + '.pdf');
-  toast(`PDF berkas jaminan siap: ${n} halaman`);
+  const n = K.finish({ title: 'Berkas Jaminan Peminjam', no: users.length > 1 ? `rekap ${users.length} peminjam` : nos[0], code: await docCode(nos.join('|') + now.toISOString()),
+    file: users.length > 1 ? `Berkas-Jaminan-Semua-Peminjam-${ymd}` : `Berkas-Jaminan-${fileTag(users[0].full_name || users[0].username)}-${ymd}` });
+  toast(`PDF berkas jaminan siap, ${n} halaman`);
+  } catch (e) { console.error(e); toast('Gagal membuat PDF'); }
 }
 function payModal(id) {
   const l = S.d.loans.find(x => x.id === +id), b = bill(l, S.d.payments), me = S.d.me;
   if (!bankOk(me)) return modal(`${mh('Konfirmasi pembayaran')}<div class="note warn" style="margin-bottom:12px">Sebelum mengirim bukti transfer, daftarkan rekening Anda. Pembayaran harus dari rekening atas nama Anda sesuai KTP.</div>${bankForm(me, 'pay:' + l.id)}`);
   const src = l.bank?.lender, from = l.bank?.bank_no ? l.bank : me;
-  modal(`${mh('Konfirmasi pengembalian')}<p class="mute small">Transfer ke rekening pemberi modal di bawah, lalu unggah foto/screenshot bukti transfer. Pembayaran menunggu verifikasi pemberi modal.</p>
+  modal(`${mh('Konfirmasi pembayaran')}
     <form data-f="pay" data-id="${l.id}" style="margin-top:12px"><div class="f"><span>Transfer ke rekening${src ? ' (sama dengan pencairan)' : ' — pilih satu'}</span>${src ? rekRow(src) : rekRow('mandiri', 'to') + rekRow('bca', 'to')}
-    ${src ? '' : `<div class="small mute" style="margin-top:6px">Setelah dikirim, semua pengembalian berikutnya wajib ke rekening yang sama.</div>`}${pemodalBox()}</div>
-    <div class="note" style="margin-bottom:12px">Dari rekening: <b>${h(bankStr(from))}</b><div class="small mute">Wajib dari rekening yang menerima dana pinjaman. Transfer dari rekening lain dapat ditolak.</div></div>
+    </div>
+    <div class="note" style="margin-bottom:12px">Dari rekening: <b>${h(bankStr(from))}</b></div>
     <label class="f"><span>Nominal (Rp)</span><input class="i" name="amount" inputmode="numeric" required value="${b.next ? Math.min(b.payoff, b.next.amt + (b.overdue ? b.denda : 0)) : b.payoff}"></label>
     <div class="small mute" style="margin:-6px 0 10px">Pelunasan hari ini: ${rp(b.payoff)}</div>
-    <label class="f"><span>Foto / screenshot bukti transfer (wajib)</span><input class="i" type="file" accept="image/*" id="bukti" data-prev="bukti-prev" required></label>
+    <label class="f"><span>Bukti transfer</span><input class="i" type="file" accept="image/*" id="bukti" data-prev="bukti-prev" required></label>
     <div class="shot" id="bukti-prev" style="display:none;margin-bottom:12px"></div>
     <label class="f"><span>Catatan</span><input class="i" name="note" placeholder="opsional"></label>
-    <label class="chk"><input type="checkbox" name="own" required><span>Saya mentransfer dari rekening ${h(bankStr(from))} ke rekening pemberi modal di atas.</span></label><div class="err"></div>
-    <button class="btn pri wide">Kirim bukti &amp; konfirmasi</button></form>`);
+    <label class="chk"><input type="checkbox" name="own" required><span>Transfer dari rekening saya sendiri.</span></label><div class="err"></div>
+    <button class="btn pri wide">Kirim</button></form>`);
 }
 // onload, bukan img.decode(): decode() bisa tidak pernah selesai di sebagian browser/WebView
 const imgEl = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('Gambar tidak bisa dibaca')); i.src = src; });
@@ -1456,7 +1604,7 @@ document.addEventListener('click', async e => {
     case 'copy': e.preventDefault(); navigator.clipboard?.writeText(t.dataset.v).then(() => toast('Nomor rekening disalin'), () => toast(t.dataset.v)); break;
     case 'img': { e.preventDefault(); const lb = document.createElement('div'); lb.className = 'lb'; lb.innerHTML = '<span style="color:#fff">Memuat…</span>'; lb.onclick = () => lb.remove(); document.body.append(lb);
       try { lb.innerHTML = `<img src="${await loadImg(id)}" alt="">`; } catch (er) { lb.innerHTML = '<span style="color:#fff">Gagal memuat</span>'; } break; }
-    case 'print': printLoan(id); break;
+    case 'print': perjanjianPdf(id); break;
     case 'struk': strukModal(id); break;
     case 'notif': Notification.requestPermission().then(p => { toast(p === 'granted' ? 'Notifikasi aktif' : 'Notifikasi ditolak browser'); render(); }); break;
     case 'struk-pdf': strukSave('pdf'); break;
@@ -1479,7 +1627,7 @@ document.addEventListener('click', async e => {
 });
 async function autoPaid(loanId) {
   const l = S.d.loans.find(x => x.id === loanId);
-  if (l && l.status === 'active' && bill(l, S.d.payments).payoff <= 0) await adm('loan_update', { id: l.id, status: 'paid' }, 'Lunas! Batas pinjaman berikutnya naik 25%');
+  if (l && l.status === 'active' && bill(l, S.d.payments).payoff <= 0) await adm('loan_update', { id: l.id, status: 'paid' }, 'Lunas. Batas pinjaman naik 25%');
 }
 document.addEventListener('input', e => {
   const t = e.target;
@@ -1523,7 +1671,7 @@ document.addEventListener('submit', async e => {
         const up = await rpc('md_file_put', { p_token: S.token, p_kind: 'bukti', p_data: await imgToData(file), p_meta: { at: new Date().toISOString(), name: file.name, from: bankStr(l.bank?.bank_no ? l.bank : S.d.me), to: bankStr(LENDER[to]) } });
         if (!up.ok) return fail(up.err);
         const r = await rpc('md_pay', { p_token: S.token, p_loan: l.id, p_amount: num(fd.amount), p_file: up.id, p_note: fd.note, p_to: to });
-        if (!r.ok) return fail(r.err); closeModal(); toast('Bukti terkirim · menunggu verifikasi'); refresh(true); break;
+        if (!r.ok) return fail(r.err); closeModal(); toast('Terkirim, menunggu verifikasi'); refresh(true); break;
       }
       case 'bank': {
         const p = { bank_name: fd.bank_name === '__lain' ? (fd.bank_other || '').trim() : fd.bank_name, bank_no: fd.bank_no, bank_holder: fd.bank_holder };
@@ -1539,7 +1687,7 @@ document.addEventListener('submit', async e => {
       }
       case 'verify': {
         const r = await rpc('md_verify', { p_token: S.token, p_id: +f.dataset.id, p_checks: { ktp: !!fd.ktp, selfie: !!fd.selfie, kk: !!fd.kk, rek: !!fd.rek }, p_note: fd.note || '' });
-        if (!r.ok) return fail(r.err); toast('Terverifikasi — lanjut kirim modal'); await refresh(true); break;
+        if (!r.ok) return fail(r.err); toast('Terverifikasi'); await refresh(true); break;
       }
       case 'ident': {
         const ve = V.nik(fd.nik, S.d.me.birth_date) || V.kk(fd.kk_no); if (ve) return fail(ve);
@@ -1555,7 +1703,7 @@ document.addEventListener('submit', async e => {
         if (!up.ok) return fail(up.err);
         const p = { id: l.id, status: 'active', cair_file: up.id, approved_at: new Date((fd.approved_at || new Date().toISOString().slice(0, 10)) + 'T08:00').toISOString() };
         p.bank = { bank_name: b.bank_name, bank_no: b.bank_no, bank_holder: b.bank_holder, lender: fd.lender };
-        if (await adm('loan_update', p, 'Pinjaman disetujui & bukti pencairan disimpan')) aLoan(l.id);
+        if (await adm('loan_update', p, 'Pencairan tersimpan')) aLoan(l.id);
         break;
       }
       case 'payadd': { if (!num(fd.amount)) return fail('Isi nominal'); await adm('pay_add', { loan_id: +f.dataset.id, amount: num(fd.amount), paid_on: fd.paid_on }, 'Pembayaran dicatat'); autoPaid(+f.dataset.id); break; }
@@ -1568,6 +1716,7 @@ document.addEventListener('submit', async e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#cam')) stopCam(); else if ($('.lb')) $('.lb').remove(); else closeModal(); } });
 
+$('#fav').href = 'data:image/svg+xml,' + encodeURIComponent(LOGO_SVG);
 function applyTheme() { const t = LS.get('theme'); t ? document.documentElement.dataset.theme = t : delete document.documentElement.dataset.theme; }
 applyTheme();
 render();
