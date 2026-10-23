@@ -361,7 +361,7 @@ function vRules() {
   <li>Bunga ${RATE}% per bulan, tenor 1–3 bulan.</li>
   <li>Pelunasan awal: pokok + bunga bulan berjalan.</li>
   <li>Denda keterlambatan ${LATE}% per hari dari sisa pinjaman.</li>
-  <li>Dokumen: KTP, KK, dan selfie dengan KTP.</li>
+  <li>Dokumen: KTP, KK, SIM (jika ada), dan selfie dengan KTP.</li>
   <li>Rekening wajib atas nama peminjam sesuai KTP.</li>
   <li>Pengembalian ke rekening yang sama dengan pencairan.</li></ul></div>`;
 }
@@ -423,7 +423,7 @@ function statusPill(l, b) {
 function vUserHome() {
   const l = openLoan(), me = S.d.me;
   const hi = `<section class="hero glass"><div class="small mute">${h(me.full_name || me.username)}</div><div class="kl">Batas pinjaman</div><div class="big">${rp(S.d.limit)}</div></section>`;
-  if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="lead">Siapkan KTP, KK, dan rekening atas nama sendiri.</p>
+  if (!l) return hi + `<div class="grid g2"><div class="card glass"><h2>Ajukan pinjaman</h2><p class="lead">Siapkan KTP, KK, SIM (jika ada), dan rekening atas nama sendiri.</p>
     <button class="btn pri wide" data-a="apply">Ajukan pinjaman</button></div>${vRules()}</div>`;
   if (l.status === 'pending') return hi + `<div class="card glass"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Pengajuan ${rp(l.amount)}</h2>${statusPill(l)}</div>
     <div class="stages"><div class="on"><b>Tahap 1</b>Diajukan<br><span class="small">${wkt(l.applied_at)}</span></div><div class="${l.verified_at ? 'on' : 'now'}"><b>Tahap 2</b>${l.verified_at ? 'Terverifikasi' : 'Verifikasi'}</div><div class="${l.verified_at ? 'now' : ''}"><b>Tahap 3</b>Pencairan</div></div>
@@ -624,7 +624,7 @@ function autoChecks(l, u) {
   const b = loanBank(l, u), docs = ['ktp', 'kk', 'selfie'].map(k => fileById(l.files?.[k])).filter(Boolean);
   return [['NIK cocok tanggal lahir', !V.nik(u.nik, u.birth_date)], ['Nomor KK valid', !V.kk(u.kk_no)],
     ['Rekening a.n. sesuai KTP', !!(b.bank_no && nameOk(b.bank_holder, u.full_name))], ['Nomor rekening wajar', !!b.bank_no && !V.bankNo(b.bank_name, b.bank_no)],
-    ['KTP & KK terunggah', !!(l.files?.ktp && l.files?.kk)], ['Selfie kamera + lokasi', (f => !!f?.meta && f.meta.lat != null && f.meta.source === 'camera')(fileById(l.files?.selfie))], ['Tanda tangan ada', !!l.files?.sign],
+    ['KTP & KK terunggah', !!(l.files?.ktp && l.files?.kk)], ...(l.files?.sim ? [['SIM terunggah', true]] : []), ['Selfie kamera + lokasi', (f => !!f?.meta && f.meta.lat != null && f.meta.source === 'camera')(fileById(l.files?.selfie))], ['Tanda tangan ada', !!l.files?.sign],
     ['Perjanjian sesuai data', !!l.agreement && l.agreement.includes(rp(l.amount)) && (!u.nik || l.agreement.includes(u.nik))]];
 }
 const chips = cs => `<div class="chips">${cs.map(([t, ok]) => `<span class="chip ${ok ? 'ok' : 'bad'}">${t}</span>`).join('')}</div>`;
@@ -741,9 +741,11 @@ function authModal(mode) {
 
 // ---------- pengajuan (wizard) ----------
 const W = { step: 0 };
-// KTP & KK boleh unggah file (scan / foto lama); selfie memegang KTP asli wajib kamera langsung + waktu & koordinat
+// KTP, KK & SIM boleh unggah file (scan / foto lama); selfie memegang KTP asli wajib kamera langsung + waktu & koordinat
+// kolom ke-5 = opsional (boleh dilewati)
 const DOCS = [['ktp', 'Foto KTP', 'KTP asli, jelas dan utuh.', 'environment'],
   ['kk', 'Foto Kartu Keluarga', 'KK asli, seluruh halaman terbaca.', 'environment'],
+  ['sim', 'Foto SIM', 'Surat Izin Mengemudi (A / B / C) asli, nama dan foto terbaca. Lewati jika tidak punya SIM.', 'environment', true],
   ['selfie', 'Selfie memegang KTP', 'Langsung dari kamera. Aktifkan izin lokasi.', 'user']];
 function identModal() {
   const me = S.d.me;
@@ -761,7 +763,7 @@ function startApply() {
   wizard();
 }
 function wizard() {
-  const st = W.step, N = 6;
+  const st = W.step, D0 = 2, N = D0 + DOCS.length + 1, last = N - 1, dk = st >= D0 && st < last ? DOCS[st - D0] : null;
   let body = '';
   if (st === 0) {
     const p = plan(W.amt, W.n);
@@ -776,11 +778,11 @@ function wizard() {
     <div class="lines" style="margin-bottom:16px">${[['full_name', 'Nama (KTP)'], ['nik', 'NIK'], ['kk_no', 'Nomor KK'], ['birth_place', 'Tempat lahir'], ['birth_date', 'Tanggal lahir'], ['address', 'Alamat'], ['phone', 'Telepon']]
       .map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(k === 'birth_date' ? tgl(me[k]) : me[k] || '-')}</b></div>`).join('')}</div>
     <h3>Rekening penerima dana</h3>${bankForm(me, 'wiz')}`;
-  } else if (st <= 4) {
-    const [k, t, d] = DOCS[st - 2], s = W.shots[k];
+  } else if (dk) {
+    const [k, t, d] = dk, s = W.shots[k];
     body = `<h3>${t}</h3><p class="mute small">${d}</p><div class="shot">${s ? `<img src="${s.data}" alt="">` : `<div class="ph">${ICO_DOC}Belum ada foto</div>`}</div>
     <div class="row" style="margin-top:12px">${k === 'selfie' ? `<button class="btn ${s ? '' : 'pri'}" data-a="cam" data-k="${k}">${s ? 'Ambil ulang' : 'Buka kamera'}</button>`
-      : `<label class="btn ${s ? '' : 'pri'}">${s ? 'Ganti file' : 'Unggah file / galeri'}<input type="file" accept="image/*" data-k="${k}" hidden></label><button class="btn sm" data-a="cam" data-k="${k}">Foto dengan kamera</button>`}</div>
+      : `<label class="btn ${s ? '' : 'pri'}">${s ? 'Ganti file' : 'Unggah file / galeri'}<input type="file" accept="image/*" data-k="${k}" hidden></label><button class="btn sm" data-a="cam" data-k="${k}">Foto dengan kamera</button>${dk[4] && s ? `<button class="btn sm" data-a="wdrop" data-k="${k}">Hapus</button>` : ''}`}</div>
     ${s ? `<div class="small mute" style="margin-top:8px">${s.meta.source === 'camera' ? 'Kamera' : 'File'}, ${wkt(s.meta.at)}${s.meta.lat != null ? ', lokasi ' + s.meta.lat.toFixed(5) + ', ' + s.meta.lng.toFixed(5) : ''}</div>` : ''}`;
   } else {
     body = `<div class="agree">${docHtml(agreementText(), { ro: true })}</div>
@@ -789,13 +791,13 @@ function wizard() {
     <label class="chk"><input type="checkbox" id="agree" ${W.agree ? 'checked' : ''}><span>Saya menyetujui perjanjian ini dan data saya benar.</span></label>
     <div class="err" id="w-err"></div>`;
   }
-  const can = st <= 1 || (st <= 4 ? !!W.shots[DOCS[st - 2][0]] : true);
+  const can = !dk || !!W.shots[dk[0]] || !!dk[4];
   modal(`${mh('Ajukan pinjaman')}<div class="steps">${Array.from({ length: N }, (_, i) => `<i class="${i <= st ? 'on' : ''}"></i>`).join('')}</div>
     <div class="small mute" style="margin:-4px 0 10px">Langkah ${st + 1} dari ${N}</div>${body}
     <div class="row" style="margin-top:18px;justify-content:space-between">${st ? '<button class="btn" data-a="wback">Kembali</button>' : '<span></span>'}
-    ${st === 1 ? `<button class="btn pri" data-a="wbank">Simpan &amp; lanjut</button>` : st < 5 ? `<button class="btn pri" data-a="wnext" ${can ? '' : 'disabled'}>Lanjut</button>` : `<button class="btn pri" data-a="wsend" id="w-send">Setujui &amp; kirim</button>`}</div>`, 'wide');
+    ${st === 1 ? `<button class="btn pri" data-a="wbank">Simpan &amp; lanjut</button>` : st < last ? `<button class="btn pri" data-a="wnext" ${can ? '' : 'disabled'}>${dk?.[4] && !W.shots[dk[0]] ? 'Lewati' : 'Lanjut'}</button>` : `<button class="btn pri" data-a="wsend" id="w-send">Setujui &amp; kirim</button>`}</div>`, 'wide');
   paintRanges();
-  if (st === 5) initSig();
+  if (st === last) initSig();
 }
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 function terbilang(n) {
@@ -859,7 +861,7 @@ Pasal 6 — Pinjaman Berikutnya
 Setelah pinjaman ini lunas, PIHAK KEDUA dapat mengajukan pinjaman berikutnya hingga ${rpT(nextLimit(W.amt))}.
 
 Pasal 7 — Pernyataan PIHAK KEDUA
-(1) Seluruh data dan dokumen yang diserahkan, yaitu KTP, Kartu Keluarga, dan swafoto memegang KTP dengan cap waktu dan lokasi, adalah benar dan sah.
+(1) Seluruh data dan dokumen yang diserahkan, yaitu KTP, Kartu Keluarga, ${W.shots?.sim ? 'Surat Izin Mengemudi (SIM), ' : ''}dan swafoto memegang KTP dengan cap waktu dan lokasi, adalah benar dan sah.
 (2) PIHAK KEDUA berusia sekurang-kurangnya 18 (delapan belas) tahun dan tidak berada di bawah pengampuan.
 (3) Keterangan yang tidak benar menjadi tanggung jawab PIHAK KEDUA dan dapat diproses sesuai ketentuan hukum yang berlaku.
 
@@ -927,13 +929,14 @@ async function sendApply() {
   if (!W.signed) return err.textContent = 'Tanda tangan belum diisi.';
   { const c = $('#sig'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let ink = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 40) ink++;
     if (ink < c.width * c.height * .0025) return err.textContent = 'Tanda tangan terlalu pendek — tanda tangani dengan lengkap.'; }
-  { const hs = await Promise.all(DOCS.map(([k]) => aHash(W.shots[k].data))), same = (a, b) => a && b && a.filter((v, i) => v !== b[i]).length <= 3;
-    if (same(hs[0], hs[1]) || same(hs[0], hs[2]) || same(hs[1], hs[2])) return err.textContent = 'Foto KTP, KK, dan selfie tidak boleh sama — ambil foto masing-masing dokumen.'; }
+  const docs = DOCS.filter(([k]) => W.shots[k]);
+  { const hs = await Promise.all(docs.map(([k]) => aHash(W.shots[k].data))), same = (a, b) => a && b && a.filter((v, i) => v !== b[i]).length <= 3;
+    if (hs.some((a, i) => hs.some((b, j) => j > i && same(a, b)))) return err.textContent = 'Foto KTP, KK, SIM, dan selfie tidak boleh sama — ambil foto masing-masing dokumen.'; }
   btn.disabled = true; btn.textContent = 'Mengunggah…'; err.textContent = '';
   try {
     const sig = $('#sig').toDataURL('image/png');
     const files = {};
-    for (const [k] of DOCS) {
+    for (const [k] of docs) {
       const s = W.shots[k];
       const r = await rpc('md_file_put', { p_token: S.token, p_kind: k, p_data: s.data, p_meta: s.meta });
       if (!r.ok) throw new Error(r.err); files[k] = r.id;
@@ -1162,8 +1165,8 @@ function fillThumbs() {
   document.querySelectorAll('[data-thumb]').forEach(async el => { try { el.querySelector('img').src = await loadImg(el.dataset.thumb); } catch {} });
 }
 function thumbs(l) {
-  const lab = { ktp: 'KTP', kk: 'KK', selfie: 'Selfie', sign: 'Tanda tangan', cair: 'Bukti pencairan' };
-  return `<div class="thumbs">${['ktp', 'kk', 'selfie', 'sign', 'cair'].filter(k => l.files[k]).map(k => { const f = fileById(l.files[k]);
+  const lab = { ktp: 'KTP', kk: 'KK', sim: 'SIM', selfie: 'Selfie', sign: 'Tanda tangan', cair: 'Bukti pencairan' };
+  return `<div class="thumbs">${['ktp', 'kk', 'sim', 'selfie', 'sign', 'cair'].filter(k => l.files[k]).map(k => { const f = fileById(l.files[k]);
     return `<div><div class="th" data-a="img" data-id="${l.files[k]}" data-thumb="${l.files[k]}"><img alt=""><span>${lab[k]}</span></div>
     ${f && f.meta && k === 'cair' ? `<div class="small mute" style="margin-top:4px">diunggah ${wkt(f.meta.at || f.created_at)}</div>` : ''}
     ${f && f.meta && k !== 'sign' && k !== 'cair' ? `<div class="small mute" style="margin-top:4px">${f.meta.at ? wkt(f.meta.at) : ''}${f.meta.source === 'camera' ? ' · kamera' : k === 'selfie' ? ' · <span class="bad-t">' + h(f.meta.source || 'bukan kamera') + '</span>' : ' · file'}${f.meta.lat != null ? `<br><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${f.meta.lat},${f.meta.lng}">Lihat peta</a>` : ''}</div>` : ''}</div>`; }).join('')}</div>`;
@@ -1188,7 +1191,7 @@ function aLoan(id) {
     modal(`${mh(`${h(u.full_name || 'Akun terhapus')} · ke-${l.no}`)}<div class="row" style="margin-bottom:14px">${statusPill(l, b)}<span class="small mute">@${h(u.username)} · ${h(u.phone)} · diajukan ${wkt(l.applied_at)}</span></div>
       ${rekBox(l, u)}
       ${l.status === 'pending' && !l.verified_at ? `<div class="card" style="margin-bottom:16px;padding:14px;border:1px solid var(--line);border-radius:18px"><h3 style="margin-top:0">Verifikasi</h3>${chips(autoChecks(l, u))}
-        <form data-f="verify" data-id="${l.id}" style="margin-top:12px">${[['ktp', 'Foto KTP asli, terbaca, NIK & nama sama dengan data'], ['selfie', 'Wajah di selfie sama dengan foto KTP'], ['kk', 'KK asli, nama peminjam tercantum'], ['rek', 'Rekening atas nama peminjam sesuai KTP']]
+        <form data-f="verify" data-id="${l.id}" style="margin-top:12px">${[['ktp', 'Foto KTP asli, terbaca, NIK & nama sama dengan data'], ['selfie', 'Wajah di selfie sama dengan foto KTP'], ['kk', 'KK asli, nama peminjam tercantum']].concat(l.files?.sim ? [['sim', 'SIM asli, nama & foto sama dengan KTP']] : [], [['rek', 'Rekening atas nama peminjam sesuai KTP']])
           .map(([k, t]) => `<label class="chk"><input type="checkbox" name="${k}" required><span>${t}</span></label>`).join('')}
         <label class="f"><span>Catatan (opsional)</span><input class="i" name="note"></label><div class="err"></div>
         <div class="row"><button class="btn ok">Verifikasi</button><button type="button" class="btn bad" data-a="reject" data-id="${l.id}">Tolak</button></div></form></div>` : ''}
@@ -1414,7 +1417,7 @@ function docBlocks(K, text, no) {
     : b.t === 'pasal' ? [K.head('Pasal ' + b.n, { al: 'center', sz: 11, before: 3 }), b.title ? K.para(b.title, { st: 'bold', al: 'center', after: 1.5 }) : null, ...b.items.map(it => K.para(it.txt, { lab: it.lab, after: 1.2 }))]
     : [K.para(b.txt, { lab: b.lab, after: 2.5 })]);
 }
-const DOCK = [['ktp', 'Kartu Tanda Penduduk'], ['kk', 'Kartu Keluarga'], ['selfie', 'Swafoto memegang KTP']];
+const DOCK = [['ktp', 'Kartu Tanda Penduduk'], ['kk', 'Kartu Keluarga'], ['sim', 'Surat Izin Mengemudi'], ['selfie', 'Swafoto memegang KTP']];
 const docMeta = f => !f?.meta ? '' : [f.meta.at ? (f.meta.source === 'camera' ? 'Diambil ' : 'Diunggah ') + wkt(f.meta.at) + (f.meta.tz ? ' ' + f.meta.tz : '') : '', f.meta.source === 'camera' ? 'kamera langsung' : f.meta.source === 'file' ? 'dari file' : f.meta.source ? 'sumber: ' + f.meta.source : '',
   f.meta.lat != null ? `GPS ${(+f.meta.lat).toFixed(6)}, ${(+f.meta.lng).toFixed(6)}${f.meta.acc ? ' (±' + f.meta.acc + ' m)' : ''}` : '', f.meta.addr || ''].filter(Boolean).join(', ');
 const pdfImgId = async id => { try { return id ? await pdfImg(await loadImg(id)) : null; } catch { return null; } };
@@ -1475,7 +1478,7 @@ async function jaminanPdf(uids) {
       .concat([['Akun', '@' + u.username], ['Terdaftar', u.created_at ? wkt(u.created_at) : '-'], ['Login terakhir', u.last_login ? wkt(u.last_login) : '-'],
         ['Status akun', u.active ? 'Aktif' : 'Nonaktif'], ['Batas pinjaman berikutnya', rp(u.limit)], ['Rekening sesuai KTP', u.bank_no ? (nameOk(u.bank_holder, u.full_name) ? 'Ya' : 'Tidak sesuai') : 'Belum diisi']]), { lw: 55 }));
 
-    const docL = ls.slice().reverse().find(l => l.files?.ktp || l.files?.kk || l.files?.selfie);
+    const docL = ls.slice().reverse().find(l => l.files?.ktp || l.files?.kk || l.files?.sim || l.files?.selfie);
     if (docL) {
       const items = []; for (const [k, t] of DOCK) if (docL.files[k]) items.push({ t, cap: docMeta(fileById(docL.files[k])), im: await pdfImgId(docL.files[k]) });
       const rows = K.photos(items, 2, 66);
@@ -1496,7 +1499,7 @@ async function jaminanPdf(uids) {
         ['Lokasi tanda tangan', l.geo?.lat != null ? `${l.geo.addr ? l.geo.addr + ', ' : ''}${(+l.geo.lat).toFixed(5)}, ${(+l.geo.lng).toFixed(5)}` : '-']]
         .concat(l.note ? [['Catatan', l.note]] : []).concat(l.verify?.note ? [['Catatan verifikasi', l.verify.note]] : []), { sz: 10.5, lw: 50 }));
       if (l.verified_at) {
-        const vc = [['ktp', 'KTP asli dan data sesuai'], ['selfie', 'Wajah swafoto sesuai KTP'], ['kk', 'KK asli, nama tercantum'], ['rek', 'Rekening sesuai KTP']];
+        const vc = [['ktp', 'KTP asli dan data sesuai'], ['selfie', 'Wajah swafoto sesuai KTP'], ['kk', 'KK asli, nama tercantum']].concat(l.files?.sim ? [['sim', 'SIM asli, nama & foto sesuai KTP']] : [], [['rek', 'Rekening sesuai KTP']]);
         K.put(sub('Hasil pemeriksaan'), K.table(['Pemeriksaan', 'Hasil'], vc.map(([k, t]) => [t, l.verify?.[k] ? 'Sesuai' : 'Tidak diperiksa']), [70, 30]));
       }
       if (b) {
@@ -1593,6 +1596,7 @@ document.addEventListener('click', async e => {
     case 'theme': { const o = ['auto', 'light', 'dark'], n = o[(o.indexOf(LS.get('theme') || 'auto') + 1) % 3]; LS.set('theme', n === 'auto' ? null : n); applyTheme(); render(); break; }
     case 'apply': startApply(); break;
     case 'wnext': W.step++; wizard(); break;
+    case 'wdrop': delete W.shots[t.dataset.k]; wizard(); break;
     case 'wback': W.agree = $('#agree')?.checked || W.agree; W.step--; wizard(); break;
     case 'wten': W.n = +t.dataset.v; wizard(); break;
     case 'wsend': sendApply(); break;
@@ -1689,7 +1693,7 @@ document.addEventListener('submit', async e => {
         break;
       }
       case 'verify': {
-        const r = await rpc('md_verify', { p_token: S.token, p_id: +f.dataset.id, p_checks: { ktp: !!fd.ktp, selfie: !!fd.selfie, kk: !!fd.kk, rek: !!fd.rek }, p_note: fd.note || '' });
+        const r = await rpc('md_verify', { p_token: S.token, p_id: +f.dataset.id, p_checks: { ktp: !!fd.ktp, selfie: !!fd.selfie, kk: !!fd.kk, rek: !!fd.rek, ...(fd.sim ? { sim: true } : {}) }, p_note: fd.note || '' });
         if (!r.ok) return fail(r.err); toast('Terverifikasi'); await refresh(true); break;
       }
       case 'ident': {
