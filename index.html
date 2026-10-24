@@ -1298,9 +1298,14 @@ Demikian perjanjian ini dibuat dengan sebenarnya, dalam keadaan sadar dan tanpa 
 }
 // ---------- dokumen formal: teks perjanjian → blok (judul, data pihak, pasal, butir) untuk tampilan & PDF ----------
 const itemOf = x => { const m = x.trim().match(/^(\(\d+\)|[a-z]\.|\d+\.)\s+(.*)$/); return m ? { lab: m[1], txt: m[2] } : { lab: '', txt: x.trim() }; };
+// perjanjian tersimpan sebelum 2026-10-24 masih memuat denda 5% dari sisa pinjaman → tampilkan sesuai ketentuan berlaku (Pasal 4 ayat 2)
+const LATE_TXT = `denda sebesar ${pct(LATE)}% (${pctT(LATE)} persen) dari total nilai hutang berjalan, yaitu sisa kewajiban pokok dan bunga yang belum dibayar pada hari tersebut.`;
+const fixAgree = t => String(t ?? '')
+  .replace(/denda sebesar \d+(?:[.,]\d+)?% \([^()\n]*\) dari sisa kewajiban yang belum dibayar\./g, LATE_TXT)
+  .replace(/denda \d+(?:[.,]\d+)?% per hari dari sisa pinjaman yang belum dibayar\./g, LATE_TXT);
 function docParse(text) {
   const out = [], kvRe = /^(\S[^:]{0,44}?)\s*:\s(.*)$/;
-  for (const blk of oneName(text).replace(/\r/g, '').split(/\n\s*\n/)) {
+  for (const blk of oneName(fixAgree(text)).replace(/\r/g, '').split(/\n\s*\n/)) {
     const ls = blk.split('\n').filter(x => x.trim()); if (!ls.length) continue;
     if (!out.length && ls.length <= 2 && /^[A-Z0-9 .,()\-–—]+$/.test(ls[0].trim())) { out.push({ t: 'title', lines: ls.map(x => x.trim()) }); continue; }
     const pm = ls[0].trim().match(/^Pasal\s+(\d+)\s*(?:[—–-]\s*(.*))?$/i);
@@ -1863,7 +1868,7 @@ async function perjanjianPdf(id) {
   const u = (isAdmin() ? userById(l.user_id) : S.d.me) || {};
   toast('Menyiapkan dokumen…');
   try {
-    const K = await pdfKit(), no = docNo(l), code = await docCode(no + '\n' + (l.agreement || ''));
+    const K = await pdfKit(), no = docNo(l), code = await docCode(no + '\n' + fixAgree(l.agreement));
     // paragraf penutup ("Demikian ...") selalu satu halaman dengan tanda tangan
     const gs = docBlocks(K, l.agreement || '', no), last = gs.length > 1 ? gs.pop() : [];
     gs.forEach(g => K.put(g)); K.put(last, K.gap(3), await signPK(K, l, u));
