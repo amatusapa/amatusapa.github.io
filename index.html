@@ -275,6 +275,14 @@ const BASE = 1000000, STEP_UP = 1.25, RATE = 10, LATE = 0.5, DAY = 86400000;
 const pct = x => String(+x).replace('.', ',');
 // tarif denda efektif per pinjaman: maksimal LATE walau database masih menyimpan tarif lama
 const lateRate = l => Math.min(LATE, Math.max(0, +l.late_rate || 0));
+// jenis tenor: mingguan (7 hari, bunga 3%/minggu) atau bulanan (30 hari, bunga RATE/bulan); pinjaman lama tanpa unit = bulanan
+const UNITS = { minggu: { k: 'minggu', days: 7, rate: 3, lbl: 'minggu', sh: 'mgg', adj: 'Mingguan' }, bulan: { k: 'bulan', days: 30, rate: RATE, lbl: 'bulan', sh: 'bln', adj: 'Bulanan' } };
+const unitOf = l => UNITS[l?.unit] || UNITS.bulan;
+const tenorStr = l => `${l.tenor} ${unitOf(l).lbl}`, tenorSh = l => `${l.tenor} ${unitOf(l).sh}`;
+// biaya administrasi per pengajuan, dipotong dari dana yang dicairkan
+const ADMIN_FEE = 6500;
+const feeOf = l => Math.max(0, +l.admin_fee || 0);
+const netOf = l => Math.max(0, +l.amount - feeOf(l));
 
 const $ = (s, el = document) => el.querySelector(s);
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -307,20 +315,23 @@ async function rpc(fn, args = {}) {
 
 // ---------- perhitungan ----------
 const nextLimit = amt => Math.max(BASE, Math.round(amt * STEP_UP / 1000) * 1000);
-function plan(P, n, rate = RATE) {
-  const I = P * rate / 100, inst = P / n + I;
-  return { P, n, I, inst, total: P + I * n, rows: Array.from({ length: n }, (_, k) => ({ k: k + 1, pokok: P / n, bunga: I, tot: inst })) };
+function plan(P, n, rate = RATE, unit = 'bulan') {
+  const I = P * rate / 100, inst = P / n + I, u = UNITS[unit] || UNITS.bulan;
+  return { P, n, I, inst, u, rate, total: P + I * n, rows: Array.from({ length: n }, (_, k) => ({ k: k + 1, pokok: P / n, bunga: I, tot: inst })) };
 }
+const loanPlan = l => plan(+l.amount, +l.tenor, +l.rate, unitOf(l).k);
+// simulasi / pengajuan baru: bunga mengikuti jenis tenor
+const planU = (P, n, k) => plan(P, n, UNITS[k].rate, k);
 // tagihan berjalan sebuah pinjaman
 function bill(l, pays, now = Date.now()) {
-  const P = +l.amount, n = +l.tenor, r = +l.rate / 100, lr = lateRate(l) / 100;
+  const P = +l.amount, n = +l.tenor, r = +l.rate / 100, lr = lateRate(l) / 100, PD = unitOf(l).days * DAY;
   const I = P * r, inst = P / n + I, contract = P + I * n;
   const ok = pays.filter(p => p.loan_id === l.id && p.status === 'ok').map(p => ({ d: day0(p.paid_on), a: +p.amount })).sort((a, b) => a.d - b.d);
   const paid = ok.reduce((s, p) => s + p.a, 0);
   const out = { P, n, I, inst, contract, paid, denda: 0, lateDays: 0, dues: [], payoff: 0, next: null };
   if (!l.approved_at) return out;
   const start = day0(l.approved_at);
-  for (let k = 1; k <= n; k++) out.dues.push({ k, d: start + 30 * k * DAY, amt: inst });
+  for (let k = 1; k <= n; k++) out.dues.push({ k, d: start + k * PD, amt: inst });
   const end = Math.min(day0(l.status === 'paid' && l.paid_at ? l.paid_at : now), start + 3650 * DAY);
   let denda = 0, late = 0;
   for (let d = start + DAY; d <= end; d += DAY) {
@@ -330,7 +341,7 @@ function bill(l, pays, now = Date.now()) {
   }
   out.denda = Math.round(denda); out.lateDays = late;
   const today = day0(now);
-  const m = Math.min(n, Math.max(1, Math.ceil((today - start) / (30 * DAY)) || 1));
+  const m = Math.min(n, Math.max(1, Math.ceil((today - start) / PD) || 1));
   out.monthsUsed = m;
   out.payoff = Math.max(0, Math.round(P + I * m + out.denda - paid));
   out.remainingContract = Math.max(0, Math.round(contract + out.denda - paid));
@@ -341,7 +352,7 @@ function bill(l, pays, now = Date.now()) {
 }
 
 // ---------- state ----------
-const S = { token: LS.get('token'), d: null, rev: 0, tab: LS.get('tab') || 'home', atab: LS.get('atab') || 'todo', calc: { amt: BASE, n: 1, lvl: 1, late: 0 }, lfilter: 'all', q: '', dirty: false };
+const S = { token: LS.get('token'), d: null, rev: 0, tab: LS.get('tab') || 'home', atab: LS.get('atab') || 'todo', calc: { amt: BASE, n: 1, u: 'bulan', lvl: 1, late: 0 }, lfilter: 'all', q: '', dirty: false };
 const isAdmin = () => S.d?.me?.role === 'admin';
 const myLoans = () => (S.d?.loans || []).filter(l => l.user_id === S.d.me.id);
 const openLoan = () => myLoans().find(l => l.status === 'pending' || l.status === 'active');
@@ -529,8 +540,10 @@ function vGate() {
 function vRules() {
   return `<div class="card glass"><h2>Ketentuan</h2><ul class="rules">
   <li>Pinjaman pertama ${rp(BASE)}, pinjaman modal naik 25% setelah lunas.</li>
-  <li>Bunga ${RATE}% per bulan, tenor 1–3 bulan.</li>
-  <li>Pelunasan awal: pokok + bunga bulan berjalan.</li>
+  <li>Mingguan: bunga ${pct(UNITS.minggu.rate)}% per minggu, tenor 1–3 minggu.</li>
+  <li>Bulanan: bunga ${RATE}% per bulan, tenor 1–3 bulan.</li>
+  <li>Biaya administrasi ${rp(ADMIN_FEE)} per pengajuan, dipotong saat pencairan.</li>
+  <li>Pelunasan awal: pokok + bunga minggu/bulan berjalan.</li>
   <li>Denda keterlambatan ${pct(LATE)}% per hari dari total hutang berjalan.</li>
   <li>Dokumen: KTP, KK, SIM, dan selfie dengan KTP.</li>
   <li>Rekening wajib atas nama peminjam sesuai KTP.</li>
@@ -541,7 +554,7 @@ function vCalc(limit) {
   const c = S.calc;
   const max = limit ?? Math.round(BASE * STEP_UP ** (c.lvl - 1) / 1000) * 1000;
   if (c.amt > max) c.amt = max;
-  const p = plan(c.amt, c.n), lateFee = c.late * LATE / 100 * p.total;
+  const p = planU(c.amt, c.n, c.u), lateFee = c.late * LATE / 100 * p.total;
   return `<div class="card glass" id="calc"><h2>Kalkulator pinjaman</h2>
   ${limit == null ? `<div class="small mute" style="margin-bottom:6px">Pinjaman ke-</div><div class="seg" style="margin-bottom:14px">${[1, 2, 3, 4, 5].map(i => `<button data-a="lvl" data-v="${i}" class="${c.lvl === i ? 'on' : ''}">${i}</button>`).join('')}</div>` : ''}
   <div class="small mute">Jumlah pinjaman</div>
@@ -549,23 +562,28 @@ function vCalc(limit) {
   <input class="rng" type="range" id="r-amt" min="100000" max="${max}" step="${max % 50000 ? 1000 : 50000}" value="${c.amt}">
   <div class="scale"><span>${rp(100000)}</span><span>Maks ${rp(max)}</span></div>
   <div class="small mute" style="margin:14px 0 6px">Tenor</div>
-  <div class="seg">${[1, 2, 3].map(n => `<button data-a="tenor" data-v="${n}" class="${c.n === n ? 'on' : ''}">${n} bulan</button>`).join('')}</div>
+  ${tenorSeg(c.u, c.n, 'cunit', 'tenor')}
   <div class="lines" id="c-lines">${simLines(p)}</div>
   <div class="small mute" style="margin:16px 0 0">Simulasi terlambat: <b id="c-late">${c.late} hari</b></div>
   <input class="rng" type="range" id="r-late" min="0" max="30" step="1" value="${c.late}">
   <div class="note ${c.late ? 'bad' : ''}" id="c-latefee">${lateNote(p, c.late)}</div>
   <div class="small mute" style="margin-top:12px" id="c-next">${nextNote(c.amt)}</div></div>`;
 }
-const calcLines = p => `<div class="ln"><span>Bunga per bulan (${RATE}%)</span><b>${rp(p.I)}</b></div>
-  <div class="ln"><span>Cicilan per bulan</span><b>${rp(p.inst)}</b></div>
+// pilihan jenis tenor (Mingguan / Bulanan) lalu lama tenor 1–3
+const tenorSeg = (k, n, au, an) => `<div class="seg" style="margin-bottom:8px">${Object.values(UNITS).map(u => `<button data-a="${au}" data-v="${u.k}" class="${k === u.k ? 'on' : ''}">${u.adj}</button>`).join('')}</div>
+  <div class="seg">${[1, 2, 3].map(i => `<button data-a="${an}" data-v="${i}" class="${n === i ? 'on' : ''}">${i} ${UNITS[k].lbl}</button>`).join('')}</div>`;
+const calcLines = p => `<div class="ln"><span>Bunga per ${p.u.lbl} (${pct(p.rate)}%)</span><b>${rp(p.I)}</b></div>
+  <div class="ln"><span>Cicilan per ${p.u.lbl}</span><b>${rp(p.inst)}</b></div>
   <div class="ln"><span>Total bunga</span><b>${rp(p.I * p.n)}</b></div>
+  <div class="ln"><span>Biaya administrasi (dipotong saat cair)</span><b>${rp(ADMIN_FEE)}</b></div>
+  <div class="ln"><span>Dana diterima</span><b>${rp(p.P - ADMIN_FEE)}</b></div>
   <div class="ln tot"><span>Total pengembalian</span><b>${rp(p.total)}</b></div>`;
-// menu Simulasi: hanya cicilan per bulan
-const simLines = p => `<div class="ln tot"><span>Cicilan per bulan</span><b>${rp(p.inst)}</b></div>`;
+// menu Simulasi: hanya cicilan per minggu / bulan
+const simLines = p => `<div class="ln tot"><span>Cicilan per ${p.u.lbl}</span><b>${rp(p.inst)}</b></div>`;
 const lateNote = (p, d) => d ? `Denda ${d} hari: <b>${rp(d * LATE / 100 * p.total)}</b>. Total menjadi ${rp(p.total + d * LATE / 100 * p.total)}.` : `Tepat waktu, tanpa denda.`;
 const nextNote = a => `Setelah lunas, batas pinjaman berikutnya <b>${rp(nextLimit(a))}</b>.`;
 function updCalc() {
-  const c = S.calc, p = plan(c.amt, c.n);
+  const c = S.calc, p = planU(c.amt, c.n, c.u);
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
   set('c-amt', rp(c.amt)); set('c-lines', simLines(p)); set('c-late', c.late + ' hari');
   const lf = document.getElementById('c-latefee'); if (lf) { lf.innerHTML = lateNote(p, c.late); lf.className = 'note ' + (c.late ? 'bad' : ''); }
@@ -602,19 +620,21 @@ function vUserHome() {
     <button class="btn pri wide" data-a="apply">Ajukan pinjaman</button></div>${vRules()}</div>`;
   if (l.status === 'pending') return hi + `<div class="card glass"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Pengajuan ${rp(l.amount)}</h2>${statusPill(l)}</div>
     <div class="stages"><div class="on"><b>Tahap 1</b>Diajukan<br><span class="small">${wkt(l.applied_at)}</span></div><div class="${l.verified_at ? 'on' : 'now'}"><b>Tahap 2</b>${l.verified_at ? 'Terverifikasi' : 'Verifikasi'}</div><div class="${l.verified_at ? 'now' : ''}"><b>Tahap 3</b>Pencairan</div></div>
-    <p class="lead">Tenor ${l.tenor} bulan. Dana ditransfer ke ${h(bankStr(l.bank))}.</p>
+    <p class="lead">Tenor ${tenorStr(l)}. Dana ${feeOf(l) ? `${rp(netOf(l))} (setelah biaya administrasi ${rp(feeOf(l))}) ` : ''}ditransfer ke ${h(bankStr(l.bank))}.</p>
     <div class="row"><a class="btn sm pri" href="${WA_APPLY}" target="_blank" rel="noopener">Konfirmasi via WhatsApp</a><button class="btn sm" data-a="viewloan" data-id="${l.id}">Lihat detail</button><button class="btn sm bad" data-a="cancel" data-id="${l.id}">Batalkan pengajuan</button></div></div>`;
   return hi + vLoanCard(l);
 }
 function vLoanCard(l, admin) {
   const b = bill(l, S.d.payments);
-  const pct = Math.min(100, b.paid / (b.contract + b.denda || 1) * 100);
+  const prog = Math.min(100, b.paid / (b.contract + b.denda || 1) * 100);
   const pend = S.d.payments.filter(p => p.loan_id === l.id && p.status === 'pending');
   return `<div class="grid g2"><div class="card glass"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Pinjaman ke-${l.no} · ${rp(l.amount)}</h2>${statusPill(l, b)}</div>
     ${b.next ? `<div style="margin-top:14px" class="small mute">${b.next.overdue ? 'Lewat jatuh tempo' : 'Tagihan berikutnya'} · ${tgl(b.next.d)}</div><div class="big">${rp(b.next.amt + (b.overdue ? b.denda : 0))}</div>` : ''}
-    <div class="prog"><i style="width:${pct}%"></i></div>
+    <div class="prog"><i style="width:${prog}%"></i></div>
     <div class="lines">
       <div class="ln"><span>Dicairkan</span><b>${tgl(l.approved_at)}</b></div>
+      <div class="ln"><span>Tenor</span><b>${tenorStr(l)} · bunga ${pct(l.rate)}%/${unitOf(l).lbl}</b></div>
+      ${feeOf(l) ? `<div class="ln"><span>Biaya administrasi (dipotong saat cair)</span><b>${rp(feeOf(l))}</b></div>` : ''}
       <div class="ln"><span>Total kontrak</span><b>${rp(b.contract)}</b></div>
       ${b.denda ? `<div class="ln" style="color:var(--bad)"><span>Denda ${b.lateDays} hari</span><b>${rp(b.denda)}</b></div>` : ''}
       <div class="ln"><span>Sudah dibayar</span><b>${rp(b.paid)}</b></div>
@@ -633,7 +653,7 @@ function payInfo(l, admin) {
   const src = l.bank?.lender, f = l.files?.cair && fileById(l.files.cair);
   const cair = `<h3 style="margin-top:18px">Bukti pencairan dana</h3>${l.files?.cair
     ? `<div class="cairimg"><div class="th" data-a="img" data-id="${l.files.cair}" data-thumb="${l.files.cair}"><img alt="Bukti transfer pencairan"><span>Bukti</span></div>
-      <div class="small"><b>${rp(l.amount)}</b> ditransfer${src ? ` dari <b>${h(bankStr(LENDER[src]))}</b>` : ''}<br>ke ${h(bankStr(l.bank))}${f ? `<div class="mute">${wkt(f.meta?.at || f.created_at)}</div>` : ''}</div></div>`
+      <div class="small"><b>${rp(netOf(l))}</b> ditransfer${feeOf(l) ? ` (pokok ${rp(l.amount)} − biaya administrasi ${rp(feeOf(l))})` : ''}${src ? ` dari <b>${h(bankStr(LENDER[src]))}</b>` : ''}<br>ke ${h(bankStr(l.bank))}${f ? `<div class="mute">${wkt(f.meta?.at || f.created_at)}</div>` : ''}</div></div>`
     : `<div class="small mute">Belum tersedia.</div>`}`;
   if (admin) return cair;
   return cair + `<h3 style="margin-top:18px">Pengembalian pinjaman</h3>
@@ -653,7 +673,7 @@ function vHist() {
   const ls = myLoans();
   if (!ls.length) return `<div class="card glass"><h2>Riwayat</h2><p class="mute">Belum ada pinjaman.</p></div>`;
   return `<div class="list">${ls.map(l => { const b = l.approved_at ? bill(l, S.d.payments) : null; return `<div class="item glass" data-a="viewloan" data-id="${l.id}">
-    <div class="av">${l.no}</div><div class="grow"><b>${rp(l.amount)} · ${l.tenor} bln</b><div class="small mute">Diajukan ${tgl(l.applied_at)}${l.paid_at ? ' · lunas ' + tgl(l.paid_at) : ''}</div></div>${statusPill(l, b)}</div>`; }).join('')}</div>`;
+    <div class="av">${l.no}</div><div class="grow"><b>${rp(l.amount)} · ${tenorSh(l)}</b><div class="small mute">Diajukan ${tgl(l.applied_at)}${l.paid_at ? ' · lunas ' + tgl(l.paid_at) : ''}</div></div>${statusPill(l, b)}</div>`; }).join('')}</div>`;
 }
 // ---------- validasi data: sama dengan md_*_err di server (supabase-modalin-validasi.sql) ----------
 const PROV = [11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 31, 32, 33, 34, 35, 36, 51, 52, 53, 61, 62, 63, 64, 65, 71, 72, 73, 74, 75, 76, 81, 82, 91, 92, 93, 94, 95, 96, 97];
@@ -816,8 +836,8 @@ function todoLoan(l, stage) {
   const u = userById(l.user_id) || {}, b = loanBank(l, u);
   return `<div class="todo glass"><div class="row" style="justify-content:space-between;align-items:flex-start">
     <div><b>${h(u.full_name || '-')}</b> <span class="small mute">@${h(u.username)} · ke-${l.no} · ${wkt(l.applied_at)}</span>
-    <div class="small mute">NIK ${h(u.nik || '-')} · ${h(u.phone || '-')}</div></div><div class="big" style="font-size:22px">${rp(l.amount)}<div class="small mute" style="text-align:right">${l.tenor} bln</div></div></div>
-    ${stage === 'verif' ? chips(autoChecks(l, u)) : `<div class="note" style="margin:10px 0">Transfer ke: <b>${h(bankStr(b))}</b><div class="small mute">Diverifikasi ${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + h(l.verify.by) : ''}</div></div>`}
+    <div class="small mute">NIK ${h(u.nik || '-')} · ${h(u.phone || '-')}</div></div><div class="big" style="font-size:22px">${rp(l.amount)}<div class="small mute" style="text-align:right">${tenorSh(l)}</div></div></div>
+    ${stage === 'verif' ? chips(autoChecks(l, u)) : `<div class="note" style="margin:10px 0">Transfer <b>${rp(netOf(l))}</b>${feeOf(l) ? ` (setelah biaya administrasi ${rp(feeOf(l))})` : ''} ke: <b>${h(bankStr(b))}</b><div class="small mute">Diverifikasi ${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + h(l.verify.by) : ''}</div></div>`}
     <div class="row" style="margin-top:10px">${stage === 'verif'
       ? `<button class="btn pri sm" data-a="aloan" data-id="${l.id}">Periksa</button><button class="btn sm bad" data-a="reject" data-id="${l.id}">Tolak</button>`
       : `<button class="btn ok sm" data-a="approve" data-id="${l.id}">Cairkan dana</button><button class="btn sm" data-a="aloan" data-id="${l.id}">Detail</button><button class="btn sm bad" data-a="reject" data-id="${l.id}">Tolak</button>`}
@@ -847,7 +867,7 @@ function vATodo() {
 function loanRow(l) {
   const u = userById(l.user_id) || {}, b = l.status === 'active' ? bill(l, S.d.payments) : null;
   return `<div class="item glass" data-a="aloan" data-id="${l.id}"><div class="av">${h((u.full_name || u.username || '?')[0].toUpperCase())}</div>
-    <div class="grow"><b class="ell" style="display:block">${h(u.full_name || u.username || 'Akun terhapus')}</b><div class="small mute ell">Ke-${l.no} · ${rp(l.amount)} · ${l.tenor} bln · ${b ? (b.next ? 'tempo ' + tgl(b.next.d) : '') + ' · sisa ' + rp(b.payoff) : 'diajukan ' + tgl(l.applied_at)}</div></div>${statusPill(l, b)}</div>`;
+    <div class="grow"><b class="ell" style="display:block">${h(u.full_name || u.username || 'Akun terhapus')}</b><div class="small mute ell">Ke-${l.no} · ${rp(l.amount)} · ${tenorSh(l)} · ${b ? (b.next ? 'tempo ' + tgl(b.next.d) : '') + ' · sisa ' + rp(b.payoff) : 'diajukan ' + tgl(l.applied_at)}</div></div>${statusPill(l, b)}</div>`;
 }
 function vASum() {
   const L = S.d.loans, act = L.filter(l => l.status === 'active'), bs = act.map(l => ({ l, b: bill(l, S.d.payments) }));
@@ -1173,7 +1193,7 @@ function identModal() {
 }
 function startApply() {
   if (V.nik(S.d.me.nik, S.d.me.birth_date) || V.kk(S.d.me.kk_no)) return identModal();
-  Object.assign(W, { step: 0, amt: Math.min(S.calc.amt, S.d.limit), n: S.calc.n, shots: {}, sign: null, agree: false });
+  Object.assign(W, { step: 0, amt: Math.min(S.calc.amt, S.d.limit), n: S.calc.n, u: S.calc.u, shots: {}, sign: null, agree: false });
   if (W.amt < 100000) W.amt = S.d.limit;
   wizard();
 }
@@ -1181,11 +1201,11 @@ function wizard() {
   const st = W.step, D0 = 2, N = D0 + DOCS.length + 1, last = N - 1, dk = st >= D0 && st < last ? DOCS[st - D0] : null;
   let body = '';
   if (st === 0) {
-    const p = plan(W.amt, W.n);
+    const p = planU(W.amt, W.n, W.u);
     body = `<h3>Nominal &amp; tenor</h3><div class="big" id="w-amt">${rp(W.amt)}</div>
     <input class="rng" type="range" id="r-wamt" min="100000" max="${S.d.limit}" step="${S.d.limit % 50000 ? 1000 : 50000}" value="${W.amt}">
     <div class="scale"><span>${rp(100000)}</span><span>Maks ${rp(S.d.limit)}</span></div>
-    <div class="seg" style="margin:14px 0">${[1, 2, 3].map(n => `<button data-a="wten" data-v="${n}" class="${W.n === n ? 'on' : ''}">${n} bulan</button>`).join('')}</div>
+    <div style="margin:14px 0">${tenorSeg(W.u, W.n, 'wunit', 'wten')}</div>
     <div class="lines" id="w-lines">${calcLines(p)}</div>`;
   } else if (st === 1) {
     const me = S.d.me;
@@ -1226,8 +1246,8 @@ const pctT = x => { const [a, b] = String(+x).split('.'); return terbilang(+a) +
 const rpT = n => `${rp(n)} (${terbilang(n)} rupiah)`;
 // teks perjanjian disimpan apa adanya saat pengajuan; format baris dibaca docParse (judul, blok "Label : isi", "Pasal n — Judul", butir "(1)")
 function agreementText() {
-  const me = S.d.me, p = plan(W.amt, W.n), now = new Date();
-  const due = new Date(now.getTime() + 30 * W.n * DAY);
+  const me = S.d.me, p = planU(W.amt, W.n, W.u), U = p.u, now = new Date();
+  const due = new Date(now.getTime() + U.days * W.n * DAY);
   return `SURAT PERJANJIAN PINJAM-MEMINJAM UANG
 
 Pada hari ini, ${HARI[now.getDay()]}, tanggal ${tglL(now)}, yang bertanda tangan di bawah ini:
@@ -1251,17 +1271,19 @@ Rekening : ${bankStr(me)}
 
 PIHAK PERTAMA dan PIHAK KEDUA selanjutnya bersama-sama disebut PARA PIHAK. PARA PIHAK menyatakan cakap hukum dan sepakat mengikatkan diri dalam perjanjian pinjam-meminjam uang berdasarkan Pasal 1320, Pasal 1338, serta Pasal 1754 sampai dengan Pasal 1769 Kitab Undang-Undang Hukum Perdata (KUHPerdata), dengan ketentuan sebagai berikut:
 
-Pasal 1 — Pokok Pinjaman
-PIHAK PERTAMA memberikan pinjaman uang kepada PIHAK KEDUA sebesar ${rpT(W.amt)}. Pinjaman berlaku sejak dana diterima di rekening PIHAK KEDUA.
+Pasal 1 — Pokok Pinjaman dan Biaya Administrasi
+(1) PIHAK PERTAMA memberikan pinjaman uang kepada PIHAK KEDUA sebesar ${rpT(W.amt)}. Pinjaman berlaku sejak dana diterima di rekening PIHAK KEDUA.
+(2) Atas pengajuan pinjaman ini PIHAK KEDUA dikenakan biaya administrasi sebesar ${rpT(ADMIN_FEE)} yang dipotong dari dana pinjaman pada saat pencairan, sehingga dana yang diterima PIHAK KEDUA sebesar ${rpT(W.amt - ADMIN_FEE)}.
+(3) Biaya administrasi tidak mengurangi pokok pinjaman yang wajib dikembalikan dan tidak dapat dikembalikan setelah dana dicairkan.
 
 Pasal 2 — Bunga, Jangka Waktu, dan Angsuran
-(1) PIHAK KEDUA wajib membayar bunga sebesar ${RATE}% (${terbilang(RATE)} persen) per bulan dari pokok pinjaman, yaitu ${rp(p.I)} per bulan, yang diperjanjikan secara tertulis sesuai Pasal 1765 dan Pasal 1767 KUHPerdata.
-(2) Jangka waktu pinjaman ${W.n} (${terbilang(W.n)}) bulan; satu bulan dihitung 30 (tiga puluh) hari kalender.
-(3) Angsuran sebesar ${rp(p.inst)} per bulan, dengan total kewajiban ${rpT(p.total)}.
+(1) PIHAK KEDUA wajib membayar bunga sebesar ${pct(U.rate)}% (${pctT(U.rate)} persen) per ${U.lbl} dari pokok pinjaman, yaitu ${rp(p.I)} per ${U.lbl}, yang diperjanjikan secara tertulis sesuai Pasal 1765 dan Pasal 1767 KUHPerdata.
+(2) Jangka waktu pinjaman ${W.n} (${terbilang(W.n)}) ${U.lbl} (tenor ${U.adj.toLowerCase()}); satu ${U.lbl} dihitung ${U.days} (${terbilang(U.days)}) hari kalender.
+(3) Angsuran sebesar ${rp(p.inst)} per ${U.lbl}, dengan total kewajiban ${rpT(p.total)}.
 (4) Jatuh tempo terakhir ${tglL(due)}, menyesuaikan tanggal pencairan dana.
 
 Pasal 3 — Pelunasan Dipercepat
-PIHAK KEDUA dapat melunasi pinjaman sebelum jatuh tempo dengan membayar pokok pinjaman ditambah bunga ${RATE}% untuk bulan berjalan.
+PIHAK KEDUA dapat melunasi pinjaman sebelum jatuh tempo dengan membayar pokok pinjaman ditambah bunga ${pct(U.rate)}% untuk setiap ${U.lbl} berjalan.
 
 Pasal 4 — Wanprestasi dan Denda
 (1) PIHAK KEDUA dinyatakan lalai apabila tidak membayar angsuran pada tanggal jatuh tempo, tanpa memerlukan surat teguran, sesuai Pasal 1238 KUHPerdata.
@@ -1365,7 +1387,7 @@ async function sendApply() {
     const rs = await rpc('md_file_put', { p_token: S.token, p_kind: 'sign', p_data: sig, p_meta: { at: new Date().toISOString() } });
     if (!rs.ok) throw new Error(rs.err); files.sign = rs.id;
     const g = W.shots.selfie.meta;
-    const r = await rpc('md_apply', { p_token: S.token, p_amount: W.amt, p_tenor: W.n, p_files: files, p_geo: { lat: g.lat, lng: g.lng, acc: g.acc, addr: g.addr, at: g.at }, p_agreement: agreementText() });
+    const r = await rpc('md_apply', { p_token: S.token, p_amount: W.amt, p_tenor: W.n, p_unit: W.u, p_files: files, p_geo: { lat: g.lat, lng: g.lng, acc: g.acc, addr: g.addr, at: g.at }, p_agreement: agreementText() });
     if (!r.ok) throw new Error(r.err);
     S.tab = 'home'; await refresh(true); appliedModal();
   } catch (e) { err.textContent = 'Gagal: ' + e.message; btn.disabled = false; btn.textContent = 'Setujui & kirim'; }
@@ -1496,7 +1518,7 @@ async function strukCanvas(l) {
   const rule = (Y, wd = 1.2, col = line, X1 = ML, X2 = XR) => { x.strokeStyle = col; x.lineWidth = wd; x.beginPath(); x.moveTo(X1, Y); x.lineTo(X2, Y); x.stroke(); };
   const kv = (rows, X, Y, w, lw, lh = 33) => { rows.forEach(([k, v]) => { txt(k, X, Y, { sz: 19, c: mute }); txt(':', X + lw, Y, { sz: 19, c: mute }); txt(fit(v, w - lw - 16, 19, 700), X + lw + 14, Y, { sz: 19, wt: 700 }); Y += lh; }); return Y; };
   const head = (t, Y, X = ML) => { txt(t, X, Y, { sz: 21, wt: 700 }); return Y + 36; };
-  const b = l.approved_at ? bill(l, S.d.payments) : null, pl = plan(+l.amount, +l.tenor, +l.rate);
+  const b = l.approved_at ? bill(l, S.d.payments) : null, pl = loanPlan(l), U = pl.u, fee = feeOf(l);
   const src = l.bank?.lender ? LENDER[l.bank.lender] : null, dst = l.bank?.bank_no ? l.bank : u, now = new Date();
   const no = docNo(l).replace('AC-PK', 'AC-BT');
   // kop
@@ -1513,14 +1535,15 @@ async function strukCanvas(l) {
   let Y = 360; const cw = (CW - 44) / 2, X2 = ML + cw + 44;
   head('A. Data Peminjam', Y); head('B. Rincian Pinjaman', Y, X2); Y += 38;
   const ya = kv([['Nama', u.full_name || '-'], ['NIK', u.nik || '-'], ['Telepon', u.phone || '-'], ['Status', ST_L[l.status] || l.status], ['Diajukan', tgl(l.applied_at)]], ML, Y, cw, 120);
-  const yb = kv([['Pokok', rp(l.amount)], ['Tenor', `${l.tenor} bulan`], ['Bunga', `${+l.rate}% per bulan`], ['Angsuran', rp(pl.inst) + ' / bulan'], ['Total kewajiban', rp(pl.total)]], X2, Y, cw, 150);
+  const yb = kv([['Pokok', rp(l.amount)], ['Tenor', tenorStr(l)], ['Bunga', `${pct(l.rate)}% per ${U.lbl}`], ['Angsuran', rp(pl.inst) + ' / ' + U.lbl]]
+    .concat(fee ? [['Biaya admin', `${rp(fee)} (cair ${rp(netOf(l))})`]] : []).concat([['Total kewajiban', rp(pl.total)]]), X2, Y, cw, 150);
   Y = Math.max(ya, yb) + 8;
   Y = head('C. Rekening', Y);
   Y = kv([['Pencairan dari', src ? bankStr(src) : '-'], ['Diterima di', bankStr(dst)], ['Pembayaran ke', src ? bankStr(src) : 'Rekening pencairan pemberi pinjaman']], ML, Y, CW, 200) + 8;
   // D. transaksi (tabel bergaris)
   Y = head('D. Riwayat Transaksi', Y);
   const tx = [{ d: l.applied_at, j: 'Pengajuan', n: +l.amount, r: '-', s: 'Diajukan' }];
-  if (l.approved_at) tx.push({ d: l.approved_at, j: 'Pencairan', n: +l.amount, r: src ? `${src.bank_name} ke ${dst.bank_name || '-'}` : '-', s: 'Selesai' });
+  if (l.approved_at) tx.push({ d: l.approved_at, j: fee ? 'Pencairan (net)' : 'Pencairan', n: netOf(l), r: src ? `${src.bank_name} ke ${dst.bank_name || '-'}` : '-', s: 'Selesai' });
   S.d.payments.filter(p => p.loan_id === l.id).sort((a, c_) => new Date(a.paid_on) - new Date(c_.paid_on)).forEach(p =>
     tx.push({ d: p.paid_on, j: p.by_admin ? 'Pembayaran (dicatat)' : 'Pembayaran', n: +p.amount, r: p.to_bank ? 'ke ' + p.to_bank.split(' a.n.')[0] : '-', s: { ok: 'Diterima', pending: 'Diverifikasi', rejected: 'Ditolak' }[p.status] }));
   const maxR = 6, rows = tx.length > maxR ? tx.slice(0, 2).concat([{ j: `${tx.length - maxR + 1} transaksi lain`, r: '', s: '' }], tx.slice(-(maxR - 3))) : tx;
@@ -1536,7 +1559,7 @@ async function strukCanvas(l) {
     : [['Total kewajiban', rp(pl.total)], ['Status', ST_L[l.status] || l.status]], ML, Y, CW, 300) + 8;
   // F. ketentuan pokok
   Y = head('F. Ketentuan Pokok', Y);
-  [`Bunga ${+l.rate}% per bulan dari pokok. Pelunasan sebelum jatuh tempo: pokok ditambah bunga bulan berjalan.`,
+  [`Bunga ${pct(l.rate)}% per ${U.lbl} dari pokok. Pelunasan sebelum jatuh tempo: pokok ditambah bunga ${U.lbl} berjalan.${fee ? ` Biaya administrasi ${rp(fee)} dipotong saat pencairan.` : ''}`,
    `Keterlambatan dikenakan denda ${pct(lateRate(l))}% per hari dari total hutang berjalan, sesuai Pasal 4 perjanjian.`,
    'Pembayaran dari rekening peminjam ke rekening pencairan, sah setelah diverifikasi pemberi pinjaman.']
     .forEach((t, i) => { txt(`${i + 1}.`, ML, Y, { sz: 19 }); Y = para(t, ML + 34, Y, CW - 34, 28) + 6; });
@@ -1625,8 +1648,8 @@ function aLoan(id) {
       <h3 style="margin-top:18px">Data peminjam</h3><div class="lines">${ID_F.concat(FIELDS, BANK_F).map(([k, v]) => `<div class="ln"><span>${v}</span><b>${h(k === 'birth_date' ? tgl(u[k]) : u[k] || '-')}</b></div>`).join('')}</div>
       <h3 style="margin-top:18px">Ubah pinjaman</h3><form data-f="loanedit" data-id="${l.id}"><div class="f2">
         <label class="f"><span>Pokok (Rp)</span><input class="i" name="amount" inputmode="numeric" value="${l.amount}"></label>
-        <label class="f"><span>Tenor (bulan)</span><select class="i" name="tenor">${[1, 2, 3, 4, 5, 6].map(n => `<option ${+l.tenor === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-        <label class="f"><span>Bunga / bulan (%)</span><input class="i" name="rate" inputmode="decimal" value="${+l.rate}"></label>
+        <label class="f"><span>Tenor (${unitOf(l).lbl})</span><select class="i" name="tenor">${[1, 2, 3, 4, 5, 6].map(n => `<option ${+l.tenor === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+        <label class="f"><span>Bunga / ${unitOf(l).lbl} (%)</span><input class="i" name="rate" inputmode="decimal" value="${+l.rate}"></label>
         <label class="f"><span>Denda / hari (%, maks ${pct(LATE)})</span><input class="i" name="late_rate" inputmode="decimal" value="${pct(lateRate(l))}"></label>
         <label class="f"><span>Tanggal cair</span><input class="i" type="date" name="approved_at" value="${l.approved_at ? l.approved_at.slice(0, 10) : ''}"></label>
         <label class="f"><span>Status</span><select class="i" name="status">${['pending', 'active', 'paid', 'rejected', 'cancelled'].map(s => `<option ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label></div>
@@ -1646,7 +1669,8 @@ function rekBox(l, u) {
 function cairModal(id) {
   const l = S.d.loans.find(x => x.id === +id), u = userById(l.user_id) || {}, b = loanBank(l, u), ok = b.bank_no && nameOk(b.bank_holder, u.full_name);
   modal(`${mh('Pencairan dana')}<div class="lines"><div class="ln"><span>Peminjam (nama KTP)</span><b>${h(u.full_name)}</b></div>
-    <div class="ln"><span>Nominal ditransfer</span><b>${rp(l.amount)}</b></div><div class="ln"><span>Ke rekening</span><b>${h(bankStr(b))}</b></div></div>
+    ${feeOf(l) ? `<div class="ln"><span>Pokok pinjaman</span><b>${rp(l.amount)}</b></div><div class="ln"><span>Biaya administrasi (dipotong)</span><b>− ${rp(feeOf(l))}</b></div>` : ''}
+    <div class="ln tot"><span>Nominal ditransfer</span><b>${rp(netOf(l))}</b></div><div class="ln"><span>Tenor</span><b>${tenorStr(l)}</b></div><div class="ln"><span>Ke rekening</span><b>${h(bankStr(b))}</b></div></div>
     ${ok ? `<div class="note" style="margin:10px 0">Nama rekening sesuai KTP.</div>`
       : `<div class="note bad" style="margin:10px 0">Rekening ${b.bank_no ? 'tidak sesuai nama KTP' : 'belum diisi'}. Pencairan tidak dapat dilakukan.</div>`}
     <form data-f="cair" data-id="${l.id}"><div class="f"><span>Ditransfer dari rekening</span>${rekRow('mandiri', 'lender') + rekRow('bca', 'lender')}
@@ -1923,15 +1947,16 @@ async function jaminanPdf(uids) {
     const h4 = K.head('IV. PINJAMAN DAN PERJANJIAN');
     if (!ls.length) K.put(h4, K.para('Belum ada pinjaman.', { c: K.MUTE }));
     for (const [li, l] of ls.entries()) {
-      const b = bs[l.id], pl = plan(+l.amount, +l.tenor, +l.rate), src = l.bank?.lender ? LENDER[l.bank.lender] : null, dst = loanBank(l, u);
-      const endD = l.approved_at ? new Date(new Date(l.approved_at).getTime() + l.tenor * 30 * DAY) : null;
+      const b = bs[l.id], pl = loanPlan(l), U = pl.u, src = l.bank?.lender ? LENDER[l.bank.lender] : null, dst = loanBank(l, u);
+      const endD = l.approved_at ? new Date(new Date(l.approved_at).getTime() + l.tenor * U.days * DAY) : null;
       K.put(li ? null : h4, K.head(`${li + 1}. Pinjaman ke-${l.no}, Nomor ${docNo(l)}`, { sz: 11, before: 4 }), K.kv([['Status', (ST_L[l.status] || l.status) + (b?.overdue ? ', terlambat' : '')],
-        ['Pokok pinjaman', rpT(+l.amount)], ['Tenor', `${l.tenor} bulan (30 hari per bulan)`], ['Bunga', `${+l.rate}% per bulan (${rp(pl.I)})`], ['Angsuran', rp(pl.inst) + ' per bulan'],
+        ['Pokok pinjaman', rpT(+l.amount)]].concat(feeOf(l) ? [['Biaya administrasi', `${rp(feeOf(l))}, dipotong saat pencairan (dana diterima ${rp(netOf(l))})`]] : []).concat([
+        ['Tenor', `${tenorStr(l)} (${U.days} hari per ${U.lbl})`], ['Bunga', `${pct(l.rate)}% per ${U.lbl} (${rp(pl.I)})`], ['Angsuran', rp(pl.inst) + ' per ' + U.lbl],
         ['Total kewajiban', rp(pl.total)], ['Denda keterlambatan', `${pct(lateRate(l))}% per hari dari total hutang berjalan`], ['Diajukan', wkt(l.applied_at)],
         ['Diverifikasi', l.verified_at ? `${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + l.verify.by : ''}` : '-'], ['Dicairkan', l.approved_at ? wkt(l.approved_at) : '-'],
         [l.status === 'paid' ? 'Lunas pada' : 'Jatuh tempo akhir', l.status === 'paid' && l.paid_at ? wkt(l.paid_at) : endD ? tglL(endD) : '-'],
         ['Rekening pencairan', src ? bankStr(src) : '-'], ['Rekening penerima', bankStr(dst)], ['Rekening pembayaran', src ? bankStr(src) : '-'],
-        ['Lokasi tanda tangan', l.geo?.lat != null ? `${l.geo.addr ? l.geo.addr + ', ' : ''}${(+l.geo.lat).toFixed(5)}, ${(+l.geo.lng).toFixed(5)}` : '-']]
+        ['Lokasi tanda tangan', l.geo?.lat != null ? `${l.geo.addr ? l.geo.addr + ', ' : ''}${(+l.geo.lat).toFixed(5)}, ${(+l.geo.lng).toFixed(5)}` : '-']])
         .concat(l.note ? [['Catatan', l.note]] : []).concat(l.verify?.note ? [['Catatan verifikasi', l.verify.note]] : []), { sz: 10.5, lw: 50 }));
       if (l.verified_at) {
         const vc = [['ktp', 'KTP asli dan data sesuai'], ['selfie', 'Wajah swafoto sesuai KTP'], ['kk', 'KK asli, nama tercantum']].concat(l.files?.sim ? [['sim', 'SIM asli, nama & foto sesuai KTP']] : [], [['rek', 'Rekening sesuai KTP']]);
@@ -2034,6 +2059,7 @@ document.addEventListener('click', async e => {
     case 'atab': S.atab = t.dataset.v; S.q = ''; LS.set('atab', S.atab); render(); break;
     case 'lf': S.lfilter = t.dataset.v; render(); break;
     case 'lvl': S.calc.lvl = +t.dataset.v; S.calc.amt = Math.round(BASE * STEP_UP ** (S.calc.lvl - 1) / 1000) * 1000; render(); break;
+    case 'cunit': S.calc.u = t.dataset.v; render(); break;
     case 'tenor': S.calc.n = +t.dataset.v; t.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === t)); updCalc(); break;
     case 'theme': { const o = ['auto', 'light', 'dark'], n = o[(o.indexOf(LS.get('theme') || 'auto') + 1) % 3]; LS.set('theme', n === 'auto' ? null : n); applyTheme(); render(); break; }
     case 'apply': startApply(); break;
@@ -2041,6 +2067,7 @@ document.addEventListener('click', async e => {
     case 'wdrop': delete W.shots[t.dataset.k]; wizard(); break;
     case 'wback': W.agree = $('#agree')?.checked || W.agree; W.step--; wizard(); break;
     case 'wten': W.n = +t.dataset.v; wizard(); break;
+    case 'wunit': W.u = t.dataset.v; wizard(); break;
     case 'wsend': sendApply(); break;
     case 'sigclear': initSig(); break;
     case 'cam': openCam(t.dataset.k); break;
@@ -2095,7 +2122,7 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'r-amt') { S.calc.amt = +t.value; updCalc(); }
   if (t.id === 'r-late') { S.calc.late = +t.value; updCalc(); }
-  if (t.id === 'r-wamt') { W.amt = +t.value; $('#w-amt').textContent = rp(W.amt); $('#w-lines').innerHTML = calcLines(plan(W.amt, W.n)); paintRanges(); }
+  if (t.id === 'r-wamt') { W.amt = +t.value; $('#w-amt').textContent = rp(W.amt); $('#w-lines').innerHTML = calcLines(planU(W.amt, W.n, W.u)); paintRanges(); }
   if (t.id === 'q') { S.q = t.value; clearTimeout(S.qt); S.qt = setTimeout(() => { const pos = t.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); }, 250); }
   if (t.id === 'agree') W.agree = t.checked;
   if (t.name === 'nik' && $('#nik-hint')) { t.value = digits(t.value).slice(0, 16); $('#nik-hint').innerHTML = nikHint(t.value, t.form.birth_date?.value || S.d?.me?.birth_date); }
