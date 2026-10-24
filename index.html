@@ -1441,13 +1441,27 @@ async function startStream() {
     camInfo();
   } catch (e) { $('#cam-info').innerHTML = 'Kamera tidak dapat dibuka. Izinkan akses kamera.<br><small>' + h(e.message) + '</small>'; }
 }
+// lokasi: akurasi tinggi dulu; bila gagal, pesan sesuai penyebab + coba ulang (akurasi biasa) tiap 4 dtk selama kamera terbuka
+const GEO_OFF = /Mac/.test(navigator.platform) && !('ontouchend' in document)
+  ? 'Izin lokasi situs sudah aktif, tetapi Lokasi di Mac mati untuk browser ini. Buka System Settings › Privacy &amp; Security › Location Services → nyalakan, lalu centang Google Chrome (atau browser yang dipakai). Setelah itu tunggu beberapa detik.'
+  : 'Izin lokasi situs sudah aktif, tetapi Lokasi/GPS perangkat mati. Nyalakan Lokasi di pengaturan HP, lalu tunggu beberapa detik.';
 function startGeo() {
   if (!navigator.geolocation) { C.geoErr = 'Perangkat tidak mendukung lokasi'; return; }
   if (C.watch != null) return;
+  const hi = !C.geoFails;
   C.watch = navigator.geolocation.watchPosition(p => {
-    const first = !C.geo; C.geo = p.coords; C.geoAt = Date.now(); C.geoErr = null; camInfo();
+    const first = !C.geo; C.geo = p.coords; C.geoAt = Date.now(); C.geoErr = null; C.geoFails = 0; camInfo();
     if (first || !C.addr) reverse(p.coords.latitude, p.coords.longitude);
-  }, e => { C.geoErr = e.code === 1 ? 'Izin lokasi ditolak — aktifkan lokasi untuk melanjutkan' : 'Lokasi belum didapat'; camInfo(); }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  }, geoFail, { enableHighAccuracy: hi, maximumAge: hi ? 5000 : 600000, timeout: 20000 });
+}
+function geoFail(e) {
+  C.geoFails = (C.geoFails || 0) + 1;
+  C.geoErr = e.code === 1 ? 'Izin lokasi ditolak — klik ikon di kiri alamat situs › Lokasi › Izinkan, lalu muat ulang halaman'
+    : e.code === 2 ? GEO_OFF : 'Lokasi belum didapat — mencoba lagi…';
+  camInfo();
+  if (e.code === 1) return;
+  navigator.geolocation.clearWatch(C.watch); C.watch = null;
+  clearTimeout(C.geoT); C.geoT = setTimeout(() => { if ($('#cam')) startGeo(); }, 4000);
 }
 async function reverse(lat, lng) {
   try {
@@ -1469,7 +1483,7 @@ function tzName() { const o = -new Date().getTimezoneOffset() / 60; return { 7: 
 function stampAndSave(src, w, hgt, mirror, source) {
   const k = C.k, g = C.geo, live = k === 'selfie';
   if (live && source !== 'camera') { toast('Selfie wajib foto langsung dari kamera', 4500); return false; }
-  if (live && !g) { toast('Lokasi wajib aktif untuk selfie — izinkan akses lokasi', 4000); return false; }
+  if (live && !g) { toast(C.geoErr ? 'Lokasi belum didapat: ' + C.geoErr.replace(/&amp;/g, '&') : 'Lokasi sedang dicari — tunggu sebentar lalu foto lagi', 7000); if (C.watch == null) { clearTimeout(C.geoT); startGeo(); } return false; }
   const q = imgQuality(src, w, hgt); if (q) { toast(q, 4500); return false; }
   const maxS = 1400, sc = Math.min(1, maxS / Math.max(w, hgt));
   const cw = Math.round(w * sc), ch = Math.round(hgt * sc);
