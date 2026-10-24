@@ -273,6 +273,8 @@ const SB_KEY = 'sb_publishable_Ny-WHCEZ3WmcLFsPBx9QeQ_9xgo7MxR';
 const BASE = 1000000, STEP_UP = 1.25, RATE = 10, LATE = 0.5, DAY = 86400000;
 // persen gaya Indonesia: 0.5 → "0,5"
 const pct = x => String(+x).replace('.', ',');
+// tarif denda efektif per pinjaman: maksimal LATE walau database masih menyimpan tarif lama
+const lateRate = l => Math.min(LATE, Math.max(0, +l.late_rate || 0));
 
 const $ = (s, el = document) => el.querySelector(s);
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -311,7 +313,7 @@ function plan(P, n, rate = RATE) {
 }
 // tagihan berjalan sebuah pinjaman
 function bill(l, pays, now = Date.now()) {
-  const P = +l.amount, n = +l.tenor, r = +l.rate / 100, lr = +l.late_rate / 100;
+  const P = +l.amount, n = +l.tenor, r = +l.rate / 100, lr = lateRate(l) / 100;
   const I = P * r, inst = P / n + I, contract = P + I * n;
   const ok = pays.filter(p => p.loan_id === l.id && p.status === 'ok').map(p => ({ d: day0(p.paid_on), a: +p.amount })).sort((a, b) => a.d - b.d);
   const paid = ok.reduce((s, p) => s + p.a, 0);
@@ -548,7 +550,7 @@ function vCalc(limit) {
   <div class="scale"><span>${rp(100000)}</span><span>Maks ${rp(max)}</span></div>
   <div class="small mute" style="margin:14px 0 6px">Tenor</div>
   <div class="seg">${[1, 2, 3].map(n => `<button data-a="tenor" data-v="${n}" class="${c.n === n ? 'on' : ''}">${n} bulan</button>`).join('')}</div>
-  <div class="lines" id="c-lines">${calcLines(p)}</div>
+  <div class="lines" id="c-lines">${simLines(p)}</div>
   <div class="note" id="c-early">${earlyNote(p)}</div>
   <div class="small mute" style="margin:16px 0 0">Simulasi terlambat: <b id="c-late">${c.late} hari</b></div>
   <input class="rng" type="range" id="r-late" min="0" max="30" step="1" value="${c.late}">
@@ -559,13 +561,15 @@ const calcLines = p => `<div class="ln"><span>Bunga per bulan (${RATE}%)</span><
   <div class="ln"><span>Cicilan per bulan</span><b>${rp(p.inst)}</b></div>
   <div class="ln"><span>Total bunga</span><b>${rp(p.I * p.n)}</b></div>
   <div class="ln tot"><span>Total pengembalian</span><b>${rp(p.total)}</b></div>`;
+// menu Simulasi: hanya cicilan per bulan
+const simLines = p => `<div class="ln tot"><span>Cicilan per bulan</span><b>${rp(p.inst)}</b></div>`;
 const lateNote = (p, d) => d ? `Denda ${d} hari: <b>${rp(d * LATE / 100 * p.total)}</b>. Total menjadi ${rp(p.total + d * LATE / 100 * p.total)}.` : `Tepat waktu, tanpa denda.`;
 const earlyNote = p => `Pelunasan awal${p.n > 1 ? ' di bulan pertama' : ''}: <b>${rp(p.P + p.I)}</b>.`;
 const nextNote = a => `Setelah lunas, batas berikutnya <b>${rp(nextLimit(a))}</b>.`;
 function updCalc() {
   const c = S.calc, p = plan(c.amt, c.n);
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
-  set('c-amt', rp(c.amt)); set('c-lines', calcLines(p)); set('c-late', c.late + ' hari');
+  set('c-amt', rp(c.amt)); set('c-lines', simLines(p)); set('c-late', c.late + ' hari');
   set('c-early', earlyNote(p));
   const lf = document.getElementById('c-latefee'); if (lf) { lf.innerHTML = lateNote(p, c.late); lf.className = 'note ' + (c.late ? 'bad' : ''); }
   set('c-next', nextNote(c.amt));
@@ -619,7 +623,7 @@ function vLoanCard(l, admin) {
       <div class="ln"><span>Sudah dibayar</span><b>${rp(b.paid)}</b></div>
       <div class="ln tot"><span>Pelunasan hari ini</span><b>${rp(b.payoff)}</b></div>
     </div>
-    ${b.overdue ? `<div class="note bad">Terlambat ${b.lateDays} hari. Denda ${pct(l.late_rate)}% per hari dari hutang berjalan.</div>` : `<div class="note">Pelunasan hari ini: <b>${rp(b.payoff)}</b>.</div>`}
+    ${b.overdue ? `<div class="note bad">Terlambat ${b.lateDays} hari. Denda ${pct(lateRate(l))}% per hari dari hutang berjalan.</div>` : `<div class="note">Pelunasan hari ini: <b>${rp(b.payoff)}</b>.</div>`}
     ${pend.length ? `<div class="note warn" style="margin-top:10px">${pend.length} pembayaran menunggu verifikasi (${rp(pend.reduce((s, p) => s + +p.amount, 0))}).</div>` : ''}
     ${l.status === 'active' && !admin ? `<div class="row" style="margin-top:14px"><button class="btn pri" data-a="pay" data-id="${l.id}">Konfirmasi pembayaran</button><button class="btn" data-a="viewloan" data-id="${l.id}">Perjanjian</button><button class="btn" data-a="struk" data-id="${l.id}">Bukti transaksi</button></div>` : ''}
     ${payInfo(l, admin)}</div>
@@ -1531,7 +1535,7 @@ async function strukCanvas(l) {
   // F. ketentuan pokok
   Y = head('F. Ketentuan Pokok', Y);
   [`Bunga ${+l.rate}% per bulan dari pokok. Pelunasan sebelum jatuh tempo: pokok ditambah bunga bulan berjalan.`,
-   `Keterlambatan dikenakan denda ${pct(l.late_rate)}% per hari dari total hutang berjalan, sesuai Pasal 4 perjanjian.`,
+   `Keterlambatan dikenakan denda ${pct(lateRate(l))}% per hari dari total hutang berjalan, sesuai Pasal 4 perjanjian.`,
    'Pembayaran dari rekening peminjam ke rekening pencairan, sah setelah diverifikasi pemberi pinjaman.']
     .forEach((t, i) => { txt(`${i + 1}.`, ML, Y, { sz: 19 }); Y = para(t, ML + 34, Y, CW - 34, 28) + 6; });
   // tanda tangan
@@ -1621,7 +1625,7 @@ function aLoan(id) {
         <label class="f"><span>Pokok (Rp)</span><input class="i" name="amount" inputmode="numeric" value="${l.amount}"></label>
         <label class="f"><span>Tenor (bulan)</span><select class="i" name="tenor">${[1, 2, 3, 4, 5, 6].map(n => `<option ${+l.tenor === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
         <label class="f"><span>Bunga / bulan (%)</span><input class="i" name="rate" inputmode="decimal" value="${+l.rate}"></label>
-        <label class="f"><span>Denda / hari (%)</span><input class="i" name="late_rate" inputmode="decimal" value="${pct(l.late_rate)}"></label>
+        <label class="f"><span>Denda / hari (%, maks ${pct(LATE)})</span><input class="i" name="late_rate" inputmode="decimal" value="${pct(lateRate(l))}"></label>
         <label class="f"><span>Tanggal cair</span><input class="i" type="date" name="approved_at" value="${l.approved_at ? l.approved_at.slice(0, 10) : ''}"></label>
         <label class="f"><span>Status</span><select class="i" name="status">${['pending', 'active', 'paid', 'rejected', 'cancelled'].map(s => `<option ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label></div>
         <label class="f"><span>Catatan</span><input class="i" name="note" value="${h(l.note || '')}"></label>
@@ -1921,7 +1925,7 @@ async function jaminanPdf(uids) {
       const endD = l.approved_at ? new Date(new Date(l.approved_at).getTime() + l.tenor * 30 * DAY) : null;
       K.put(li ? null : h4, K.head(`${li + 1}. Pinjaman ke-${l.no}, Nomor ${docNo(l)}`, { sz: 11, before: 4 }), K.kv([['Status', (ST_L[l.status] || l.status) + (b?.overdue ? ', terlambat' : '')],
         ['Pokok pinjaman', rpT(+l.amount)], ['Tenor', `${l.tenor} bulan (30 hari per bulan)`], ['Bunga', `${+l.rate}% per bulan (${rp(pl.I)})`], ['Angsuran', rp(pl.inst) + ' per bulan'],
-        ['Total kewajiban', rp(pl.total)], ['Denda keterlambatan', `${pct(l.late_rate)}% per hari dari total hutang berjalan`], ['Diajukan', wkt(l.applied_at)],
+        ['Total kewajiban', rp(pl.total)], ['Denda keterlambatan', `${pct(lateRate(l))}% per hari dari total hutang berjalan`], ['Diajukan', wkt(l.applied_at)],
         ['Diverifikasi', l.verified_at ? `${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + l.verify.by : ''}` : '-'], ['Dicairkan', l.approved_at ? wkt(l.approved_at) : '-'],
         [l.status === 'paid' ? 'Lunas pada' : 'Jatuh tempo akhir', l.status === 'paid' && l.paid_at ? wkt(l.paid_at) : endD ? tglL(endD) : '-'],
         ['Rekening pencairan', src ? bankStr(src) : '-'], ['Rekening penerima', bankStr(dst)], ['Rekening pembayaran', src ? bankStr(src) : '-'],
@@ -2195,7 +2199,7 @@ document.addEventListener('submit', async e => {
       case 'pjual': await pawnRpc('md_pawn_admin', { p_id: +f.dataset.id, p_action: 'jual', p: { price: num(fd.price) } }, 'Barang tampil di Pasar'); break;
       case 'pharga': await pawnRpc('md_pawn_admin', { p_id: +f.dataset.id, p_action: 'harga', p: { price: num(fd.price) } }, 'Harga diubah'); break;
       case 'payadd': { if (!num(fd.amount)) return fail('Isi nominal'); await adm('pay_add', { loan_id: +f.dataset.id, amount: num(fd.amount), paid_on: fd.paid_on }, 'Pembayaran dicatat'); autoPaid(+f.dataset.id); break; }
-      case 'loanedit': await adm('loan_update', { id: f.dataset.id, amount: num(fd.amount), tenor: +fd.tenor, rate: +String(fd.rate).replace(',', '.'), late_rate: +String(fd.late_rate).replace(',', '.'), status: fd.status, approved_at: fd.approved_at ? new Date(fd.approved_at + 'T08:00').toISOString() : '', note: fd.note }, 'Pinjaman diperbarui'); break;
+      case 'loanedit': await adm('loan_update', { id: f.dataset.id, amount: num(fd.amount), tenor: +fd.tenor, rate: +String(fd.rate).replace(',', '.'), late_rate: lateRate({ late_rate: String(fd.late_rate).replace(',', '.') }), status: fd.status, approved_at: fd.approved_at ? new Date(fd.approved_at + 'T08:00').toISOString() : '', note: fd.note }, 'Pinjaman diperbarui'); break;
       case 'useredit': await adm('user_update', { id: f.dataset.id, ...fd, limit_override: fd.limit_override ? String(num(fd.limit_override)) : '' }, 'Data peminjam disimpan'); break;
       case 'userpass': { if ((fd.password || '').length < 6) return fail('Minimal 6 karakter'); if (await adm('user_pass', { id: f.dataset.id, password: fd.password }, 'Password direset')) f.reset(); break; }
     }
