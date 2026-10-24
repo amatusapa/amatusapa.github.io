@@ -563,7 +563,7 @@ function vCalc(limit) {
   <div class="scale"><span>${rp(100000)}</span><span>Maks ${rp(max)}</span></div>
   <div class="small mute" style="margin:14px 0 6px">Tenor</div>
   ${tenorSeg(c.u, c.n, 'cunit', 'tenor')}
-  <div class="lines" id="c-lines">${simLines(p)}</div>
+  <div class="lines" id="c-lines">${instLines(p)}</div>
   <div class="small mute" style="margin:16px 0 0">Simulasi terlambat: <b id="c-late">${c.late} hari</b></div>
   <input class="rng" type="range" id="r-late" min="0" max="30" step="1" value="${c.late}">
   <div class="note ${c.late ? 'bad' : ''}" id="c-latefee">${lateNote(p, c.late)}</div>
@@ -572,22 +572,15 @@ function vCalc(limit) {
 // pilihan jenis tenor (Mingguan / Bulanan) lalu lama tenor 1–3
 const tenorSeg = (k, n, au, an) => `<div class="seg" style="margin-bottom:8px">${Object.values(UNITS).map(u => `<button data-a="${au}" data-v="${u.k}" class="${k === u.k ? 'on' : ''}">${u.adj}</button>`).join('')}</div>
   <div class="seg">${[1, 2, 3].map(i => `<button data-a="${an}" data-v="${i}" class="${n === i ? 'on' : ''}">${i} ${UNITS[k].lbl}</button>`).join('')}</div>`;
-const calcLines = p => `<div class="ln"><span>Bunga per ${p.u.lbl} (${pct(p.rate)}%)</span><b>${rp(p.I)}</b></div>
-  <div class="ln"><span>Cicilan per ${p.u.lbl}</span><b>${rp(p.inst)}</b></div>
-  <div class="ln"><span>Total bunga</span><b>${rp(p.I * p.n)}</b></div>
-  <div class="ln"><span>Biaya administrasi</span><b>${rp(p.fee)}</b></div>
-  <div class="ln"><span>Angsuran pertama (+ biaya administrasi)</span><b>${rp(p.first)}</b></div>
-  <div class="ln"><span>Dana diterima</span><b>${rp(p.P)}</b></div>
-  <div class="ln tot"><span>Total pengembalian</span><b>${rp(p.total)}</b></div>`;
-// menu Simulasi: hanya cicilan per minggu / bulan
-const simLines = p => `<div class="ln tot"><span>Cicilan per ${p.u.lbl}</span><b>${rp(p.inst)}</b></div>`;
+// kalkulator (Simulasi + pengajuan): hanya rincian angsuran, biaya administrasi ikut angsuran pertama
+const instLines = p => p.rows.map(r => `<div class="ln"><span>Angsuran ke-${r.k}${r.k === 1 && p.fee ? ' (+ biaya administrasi)' : ''}</span><b>${rp(r.tot)}</b></div>`).join('');
 // denda dari pokok + bunga (biaya administrasi tidak didenda)
 const lateNote = (p, d) => d ? `Denda ${d} hari: <b>${rp(d * LATE / 100 * (p.total - p.fee))}</b>. Total menjadi ${rp(p.total + d * LATE / 100 * (p.total - p.fee))}.` : `Tepat waktu, tanpa denda.`;
 const nextNote = a => `Setelah lunas, batas pinjaman berikutnya <b>${rp(nextLimit(a))}</b>.`;
 function updCalc() {
   const c = S.calc, p = planU(c.amt, c.n, c.u);
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
-  set('c-amt', rp(c.amt)); set('c-lines', simLines(p)); set('c-late', c.late + ' hari');
+  set('c-amt', rp(c.amt)); set('c-lines', instLines(p)); set('c-late', c.late + ' hari');
   const lf = document.getElementById('c-latefee'); if (lf) { lf.innerHTML = lateNote(p, c.late); lf.className = 'note ' + (c.late ? 'bad' : ''); }
   set('c-next', nextNote(c.amt));
   paintRanges();
@@ -1208,7 +1201,7 @@ function wizard() {
     <input class="rng" type="range" id="r-wamt" min="100000" max="${S.d.limit}" step="${S.d.limit % 50000 ? 1000 : 50000}" value="${W.amt}">
     <div class="scale"><span>${rp(100000)}</span><span>Maks ${rp(S.d.limit)}</span></div>
     <div style="margin:14px 0">${tenorSeg(W.u, W.n, 'wunit', 'wten')}</div>
-    <div class="lines" id="w-lines">${calcLines(p)}</div>`;
+    <div class="lines" id="w-lines">${instLines(p)}</div>`;
   } else if (st === 1) {
     const me = S.d.me;
     body = `<h3>Data diri peminjam</h3>
@@ -2123,7 +2116,7 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'r-amt') { S.calc.amt = +t.value; updCalc(); }
   if (t.id === 'r-late') { S.calc.late = +t.value; updCalc(); }
-  if (t.id === 'r-wamt') { W.amt = +t.value; $('#w-amt').textContent = rp(W.amt); $('#w-lines').innerHTML = calcLines(planU(W.amt, W.n, W.u)); paintRanges(); }
+  if (t.id === 'r-wamt') { W.amt = +t.value; $('#w-amt').textContent = rp(W.amt); $('#w-lines').innerHTML = instLines(planU(W.amt, W.n, W.u)); paintRanges(); }
   if (t.id === 'q') { S.q = t.value; clearTimeout(S.qt); S.qt = setTimeout(() => { const pos = t.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); }, 250); }
   if (t.id === 'agree') W.agree = t.checked;
   if (t.name === 'nik' && $('#nik-hint')) { t.value = digits(t.value).slice(0, 16); $('#nik-hint').innerHTML = nikHint(t.value, t.form.birth_date?.value || S.d?.me?.birth_date); }
