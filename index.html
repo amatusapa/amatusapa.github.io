@@ -95,7 +95,7 @@ h3{font-size:15px;margin:0 0 8px}
 .rng::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid var(--acc)}
 .scale{display:flex;justify-content:space-between;font-size:12px;color:var(--mute)}
 .seg{display:inline-flex;padding:4px;border-radius:14px;background:var(--edge);border:1px solid var(--line);gap:4px;flex-wrap:wrap}
-.seg button{border:0;background:transparent;font:inherit;font-weight:600;color:var(--mute);padding:7px 13px;border-radius:10px;cursor:pointer}
+.seg button{border:0;background:transparent;font:inherit;font-weight:600;color:var(--mute);padding:7px 13px;border-radius:10px;cursor:pointer;transition:background-color .2s ease,color .2s ease,box-shadow .2s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .seg button.on{background:var(--glass2);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .lines{display:grid;gap:2px;margin:12px 0}
 .ln{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed var(--edge)}
@@ -374,7 +374,7 @@ async function refresh(force) {
     S.d = r; S.rev = r.rev;
     if (isAdmin()) adminAlert();
     if (busy()) S.dirty = true; else render();
-    if ($('#modal').firstChild && M.refresh) M.refresh();
+    if ($('#modal').firstChild && M.refresh) { const sc = $('#modal .modal')?.scrollTop; M.refresh(); const m = $('#modal .modal'); if (m && sc) m.scrollTop = sc; }
   } catch (e) { console.warn(e); }
 }
 // admin: jumlah tugas di judul tab + pemberitahuan saat ada pengajuan / bukti bayar baru
@@ -571,7 +571,10 @@ function vCalc(limit) {
 }
 // pilihan jenis tenor (Mingguan / Bulanan) lalu lama tenor 1–3
 const tenorSeg = (k, n, au, an) => `<div class="seg" style="margin-bottom:8px">${Object.values(UNITS).map(u => `<button data-a="${au}" data-v="${u.k}" class="${k === u.k ? 'on' : ''}">${u.adj}</button>`).join('')}</div>
-  <div class="seg">${[1, 2, 3].map(i => `<button data-a="${an}" data-v="${i}" class="${n === i ? 'on' : ''}">${i} ${UNITS[k].lbl}</button>`).join('')}</div>`;
+  <div class="seg" data-tn="${an}">${[1, 2, 3].map(i => `<button data-a="${an}" data-v="${i}" class="${n === i ? 'on' : ''}">${i} ${UNITS[k].lbl}</button>`).join('')}</div>`;
+// ganti pilihan tanpa render ulang (render ulang = kedip / scroll lompat)
+const segPick = t => t.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === t));
+const segUnit = (t, an) => { segPick(t); document.querySelectorAll(`[data-tn="${an}"] button`).forEach(b => b.textContent = b.dataset.v + ' ' + UNITS[t.dataset.v].lbl); };
 // kalkulator (Simulasi + pengajuan): hanya rincian angsuran (sudah termasuk bagian biaya administrasi)
 const instLines = p => p.rows.map(r => `<div class="ln"><span>Angsuran ke-${r.k}</span><b>${rp(r.tot)}</b></div>`).join('');
 // denda dari pokok + bunga (biaya administrasi tidak didenda)
@@ -1143,6 +1146,8 @@ function aPawn(id) {
 const M = { refresh: null };
 function modal(html, cls = '', onRefresh = null) {
   M.refresh = onRefresh;
+  const m = $('#modal .modal');
+  if (m) { m.className = 'modal ' + cls; m.firstElementChild.innerHTML = html; m.scrollTop = 0; return; }
   $('#modal').innerHTML = `<div class="mask"><div class="modal ${cls}" role="dialog" aria-modal="true"><div class="mi">${html}</div></div></div>`;
 }
 function closeModal() { $('#modal').innerHTML = ''; M.refresh = null; stopCam(); if (S.dirty) { S.dirty = false; render(); } }
@@ -2059,15 +2064,15 @@ document.addEventListener('click', async e => {
     case 'atab': S.atab = t.dataset.v; S.q = ''; LS.set('atab', S.atab); render(); break;
     case 'lf': S.lfilter = t.dataset.v; render(); break;
     case 'lvl': S.calc.lvl = +t.dataset.v; S.calc.amt = Math.round(BASE * STEP_UP ** (S.calc.lvl - 1) / 1000) * 1000; render(); break;
-    case 'cunit': S.calc.u = t.dataset.v; render(); break;
-    case 'tenor': S.calc.n = +t.dataset.v; t.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === t)); updCalc(); break;
+    case 'cunit': S.calc.u = t.dataset.v; segUnit(t, 'tenor'); updCalc(); break;
+    case 'tenor': S.calc.n = +t.dataset.v; segPick(t); updCalc(); break;
     case 'theme': { const o = ['auto', 'light', 'dark'], n = o[(o.indexOf(LS.get('theme') || 'auto') + 1) % 3]; LS.set('theme', n === 'auto' ? null : n); applyTheme(); render(); break; }
     case 'apply': startApply(); break;
     case 'wnext': W.step++; wizard(); break;
     case 'wdrop': delete W.shots[t.dataset.k]; wizard(); break;
     case 'wback': W.agree = $('#agree')?.checked || W.agree; W.step--; wizard(); break;
-    case 'wten': W.n = +t.dataset.v; wizard(); break;
-    case 'wunit': W.u = t.dataset.v; wizard(); break;
+    case 'wten': W.n = +t.dataset.v; segPick(t); $('#w-lines').innerHTML = instLines(planU(W.amt, W.n, W.u)); break;
+    case 'wunit': W.u = t.dataset.v; segUnit(t, 'wten'); $('#w-lines').innerHTML = instLines(planU(W.amt, W.n, W.u)); break;
     case 'wsend': sendApply(); break;
     case 'sigclear': initSig(); break;
     case 'cam': openCam(t.dataset.k); break;
