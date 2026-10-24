@@ -270,7 +270,9 @@ label.rek{cursor:pointer}label.rek input{width:18px;height:18px;flex:none}
 'use strict';
 const SB_URL = 'https://bbptcxpzzvgpxqylkrmw.supabase.co';
 const SB_KEY = 'sb_publishable_Ny-WHCEZ3WmcLFsPBx9QeQ_9xgo7MxR';
-const BASE = 1000000, STEP_UP = 1.25, RATE = 10, LATE = 5, DAY = 86400000;
+const BASE = 1000000, STEP_UP = 1.25, RATE = 10, LATE = 0.5, DAY = 86400000;
+// persen gaya Indonesia: 0.5 → "0,5"
+const pct = x => String(+x).replace('.', ',');
 
 const $ = (s, el = document) => el.querySelector(s);
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -527,7 +529,7 @@ function vRules() {
   <li>Pinjaman pertama ${rp(BASE)}; naik 25% setelah lunas.</li>
   <li>Bunga ${RATE}% per bulan, tenor 1–3 bulan.</li>
   <li>Pelunasan awal: pokok + bunga bulan berjalan.</li>
-  <li>Denda keterlambatan ${LATE}% per hari dari sisa pinjaman.</li>
+  <li>Denda keterlambatan ${pct(LATE)}% per hari dari total hutang berjalan.</li>
   <li>Dokumen: KTP, KK, SIM, dan selfie dengan KTP.</li>
   <li>Rekening wajib atas nama peminjam sesuai KTP.</li>
   <li>Pengembalian ke rekening yang sama dengan pencairan.</li></ul></div>`;
@@ -617,7 +619,7 @@ function vLoanCard(l, admin) {
       <div class="ln"><span>Sudah dibayar</span><b>${rp(b.paid)}</b></div>
       <div class="ln tot"><span>Pelunasan hari ini</span><b>${rp(b.payoff)}</b></div>
     </div>
-    ${b.overdue ? `<div class="note bad">Terlambat ${b.lateDays} hari. Denda ${+l.late_rate}% per hari.</div>` : `<div class="note">Pelunasan hari ini: <b>${rp(b.payoff)}</b>.</div>`}
+    ${b.overdue ? `<div class="note bad">Terlambat ${b.lateDays} hari. Denda ${pct(l.late_rate)}% per hari dari hutang berjalan.</div>` : `<div class="note">Pelunasan hari ini: <b>${rp(b.payoff)}</b>.</div>`}
     ${pend.length ? `<div class="note warn" style="margin-top:10px">${pend.length} pembayaran menunggu verifikasi (${rp(pend.reduce((s, p) => s + +p.amount, 0))}).</div>` : ''}
     ${l.status === 'active' && !admin ? `<div class="row" style="margin-top:14px"><button class="btn pri" data-a="pay" data-id="${l.id}">Konfirmasi pembayaran</button><button class="btn" data-a="viewloan" data-id="${l.id}">Perjanjian</button><button class="btn" data-a="struk" data-id="${l.id}">Bukti transaksi</button></div>` : ''}
     ${payInfo(l, admin)}</div>
@@ -1219,6 +1221,7 @@ function terbilang(n) {
     : x < 1e9 ? f(Math.floor(x / 1e6)) + ' juta ' + f(x % 1e6) : f(Math.floor(x / 1e9)) + ' miliar ' + f(x % 1e9);
   n = Math.floor(Math.abs(n || 0)); return n ? f(n).replace(/\s+/g, ' ').trim() : 'nol';
 }
+const pctT = x => { const [a, b] = String(+x).split('.'); return terbilang(+a) + (b ? ' koma ' + [...b].map(d => terbilang(+d)).join(' ') : ''); };
 const rpT = n => `${rp(n)} (${terbilang(n)} rupiah)`;
 // teks perjanjian disimpan apa adanya saat pengajuan; format baris dibaca docParse (judul, blok "Label : isi", "Pasal n — Judul", butir "(1)")
 function agreementText() {
@@ -1261,7 +1264,7 @@ PIHAK KEDUA dapat melunasi pinjaman sebelum jatuh tempo dengan membayar pokok pi
 
 Pasal 4 — Wanprestasi dan Denda
 (1) PIHAK KEDUA dinyatakan lalai apabila tidak membayar angsuran pada tanggal jatuh tempo, tanpa memerlukan surat teguran, sesuai Pasal 1238 KUHPerdata.
-(2) Setiap hari keterlambatan dikenakan denda sebesar ${LATE}% (${terbilang(LATE)} persen) dari sisa kewajiban yang belum dibayar.
+(2) Setiap hari keterlambatan dikenakan denda sebesar ${pct(LATE)}% (${pctT(LATE)} persen) dari total nilai hutang berjalan, yaitu sisa kewajiban pokok dan bunga yang belum dibayar pada hari tersebut.
 (3) PIHAK PERTAMA berhak menuntut pelunasan seluruh kewajiban beserta denda, biaya, dan ganti rugi sesuai Pasal 1243 KUHPerdata.
 
 Pasal 5 — Rekening dan Pembayaran
@@ -1528,7 +1531,7 @@ async function strukCanvas(l) {
   // F. ketentuan pokok
   Y = head('F. Ketentuan Pokok', Y);
   [`Bunga ${+l.rate}% per bulan dari pokok. Pelunasan sebelum jatuh tempo: pokok ditambah bunga bulan berjalan.`,
-   `Keterlambatan dikenakan denda ${+l.late_rate}% per hari dari sisa kewajiban, sesuai Pasal 4 perjanjian.`,
+   `Keterlambatan dikenakan denda ${pct(l.late_rate)}% per hari dari total hutang berjalan, sesuai Pasal 4 perjanjian.`,
    'Pembayaran dari rekening peminjam ke rekening pencairan, sah setelah diverifikasi pemberi pinjaman.']
     .forEach((t, i) => { txt(`${i + 1}.`, ML, Y, { sz: 19 }); Y = para(t, ML + 34, Y, CW - 34, 28) + 6; });
   // tanda tangan
@@ -1618,7 +1621,7 @@ function aLoan(id) {
         <label class="f"><span>Pokok (Rp)</span><input class="i" name="amount" inputmode="numeric" value="${l.amount}"></label>
         <label class="f"><span>Tenor (bulan)</span><select class="i" name="tenor">${[1, 2, 3, 4, 5, 6].map(n => `<option ${+l.tenor === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
         <label class="f"><span>Bunga / bulan (%)</span><input class="i" name="rate" inputmode="decimal" value="${+l.rate}"></label>
-        <label class="f"><span>Denda / hari (%)</span><input class="i" name="late_rate" inputmode="decimal" value="${+l.late_rate}"></label>
+        <label class="f"><span>Denda / hari (%)</span><input class="i" name="late_rate" inputmode="decimal" value="${pct(l.late_rate)}"></label>
         <label class="f"><span>Tanggal cair</span><input class="i" type="date" name="approved_at" value="${l.approved_at ? l.approved_at.slice(0, 10) : ''}"></label>
         <label class="f"><span>Status</span><select class="i" name="status">${['pending', 'active', 'paid', 'rejected', 'cancelled'].map(s => `<option ${l.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></label></div>
         <label class="f"><span>Catatan</span><input class="i" name="note" value="${h(l.note || '')}"></label>
@@ -1918,7 +1921,7 @@ async function jaminanPdf(uids) {
       const endD = l.approved_at ? new Date(new Date(l.approved_at).getTime() + l.tenor * 30 * DAY) : null;
       K.put(li ? null : h4, K.head(`${li + 1}. Pinjaman ke-${l.no}, Nomor ${docNo(l)}`, { sz: 11, before: 4 }), K.kv([['Status', (ST_L[l.status] || l.status) + (b?.overdue ? ', terlambat' : '')],
         ['Pokok pinjaman', rpT(+l.amount)], ['Tenor', `${l.tenor} bulan (30 hari per bulan)`], ['Bunga', `${+l.rate}% per bulan (${rp(pl.I)})`], ['Angsuran', rp(pl.inst) + ' per bulan'],
-        ['Total kewajiban', rp(pl.total)], ['Denda keterlambatan', `${+l.late_rate}% per hari dari sisa kewajiban`], ['Diajukan', wkt(l.applied_at)],
+        ['Total kewajiban', rp(pl.total)], ['Denda keterlambatan', `${pct(l.late_rate)}% per hari dari total hutang berjalan`], ['Diajukan', wkt(l.applied_at)],
         ['Diverifikasi', l.verified_at ? `${wkt(l.verified_at)}${l.verify?.by ? ' oleh @' + l.verify.by : ''}` : '-'], ['Dicairkan', l.approved_at ? wkt(l.approved_at) : '-'],
         [l.status === 'paid' ? 'Lunas pada' : 'Jatuh tempo akhir', l.status === 'paid' && l.paid_at ? wkt(l.paid_at) : endD ? tglL(endD) : '-'],
         ['Rekening pencairan', src ? bankStr(src) : '-'], ['Rekening penerima', bankStr(dst)], ['Rekening pembayaran', src ? bankStr(src) : '-'],
