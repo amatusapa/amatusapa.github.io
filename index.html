@@ -551,7 +551,6 @@ function vCalc(limit) {
   <div class="small mute" style="margin:14px 0 6px">Tenor</div>
   <div class="seg">${[1, 2, 3].map(n => `<button data-a="tenor" data-v="${n}" class="${c.n === n ? 'on' : ''}">${n} bulan</button>`).join('')}</div>
   <div class="lines" id="c-lines">${simLines(p)}</div>
-  <div class="note" id="c-early">${earlyNote(p)}</div>
   <div class="small mute" style="margin:16px 0 0">Simulasi terlambat: <b id="c-late">${c.late} hari</b></div>
   <input class="rng" type="range" id="r-late" min="0" max="30" step="1" value="${c.late}">
   <div class="note ${c.late ? 'bad' : ''}" id="c-latefee">${lateNote(p, c.late)}</div>
@@ -564,13 +563,11 @@ const calcLines = p => `<div class="ln"><span>Bunga per bulan (${RATE}%)</span><
 // menu Simulasi: hanya cicilan per bulan
 const simLines = p => `<div class="ln tot"><span>Cicilan per bulan</span><b>${rp(p.inst)}</b></div>`;
 const lateNote = (p, d) => d ? `Denda ${d} hari: <b>${rp(d * LATE / 100 * p.total)}</b>. Total menjadi ${rp(p.total + d * LATE / 100 * p.total)}.` : `Tepat waktu, tanpa denda.`;
-const earlyNote = p => `Pelunasan awal${p.n > 1 ? ' di bulan pertama' : ''}: <b>${rp(p.P + p.I)}</b>.`;
 const nextNote = a => `Setelah lunas, batas berikutnya <b>${rp(nextLimit(a))}</b>.`;
 function updCalc() {
   const c = S.calc, p = plan(c.amt, c.n);
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
   set('c-amt', rp(c.amt)); set('c-lines', simLines(p)); set('c-late', c.late + ' hari');
-  set('c-early', earlyNote(p));
   const lf = document.getElementById('c-latefee'); if (lf) { lf.innerHTML = lateNote(p, c.late); lf.className = 'note ' + (c.late ? 'bad' : ''); }
   set('c-next', nextNote(c.amt));
   paintRanges();
