@@ -1378,6 +1378,11 @@ async function sendApply() {
   if (!W.signed) return err.textContent = 'Tanda tangan belum diisi.';
   { const c = $('#sig'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let ink = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 40) ink++;
     if (ink < c.width * c.height * .0025) return err.textContent = 'Tanda tangan terlalu pendek — tanda tangani dengan lengkap.'; }
+  // dokumen wajib yang belum ada → kembali ke langkahnya, jangan unggah lalu ditolak server
+  const miss = DOCS.findIndex(d => !d[4] && !W.shots[d[0]]);
+  if (miss >= 0) { W.agree = $('#agree').checked; W.step = 2 + miss; wizard(); return toast(DOCS[miss][1] + ' belum ada — lengkapi dulu, lalu lanjutkan sampai kirim.', 5000); }
+  // server menerima selfie maksimal 2 jam sebelum pengajuan
+  if (Date.now() - new Date(W.shots.selfie.meta.at) > 110 * 60000) { delete W.shots.selfie; W.agree = $('#agree').checked; W.step = 2 + DOCS.findIndex(d => d[0] === 'selfie'); wizard(); return toast('Selfie sudah lebih dari 2 jam — ambil ulang selfie.', 5000); }
   const docs = DOCS.filter(([k]) => W.shots[k]);
   { const hs = await Promise.all(docs.map(([k]) => aHash(W.shots[k].data))), same = (a, b) => a && b && a.filter((v, i) => v !== b[i]).length <= 3;
     if (hs.some((a, i) => hs.some((b, j) => j > i && same(a, b)))) return err.textContent = 'Foto KTP, KK, SIM, dan selfie tidak boleh sama — ambil foto masing-masing dokumen.'; }
@@ -1385,16 +1390,24 @@ async function sendApply() {
   try {
     const sig = $('#sig').toDataURL('image/png');
     const files = {};
+    // foto yang sudah terunggah dipakai lagi saat kirim ulang (tidak menghabiskan batas unggah harian)
     for (const [k] of docs) {
       const s = W.shots[k];
-      const r = await rpc('md_file_put', { p_token: S.token, p_kind: k, p_data: s.data, p_meta: s.meta });
-      if (!r.ok) throw new Error(r.err); files[k] = r.id;
+      if (!s.id) { const r = await rpc('md_file_put', { p_token: S.token, p_kind: k, p_data: s.data, p_meta: s.meta }); if (!r.ok) throw new Error(r.err); s.id = r.id; }
+      files[k] = s.id;
     }
-    const rs = await rpc('md_file_put', { p_token: S.token, p_kind: 'sign', p_data: sig, p_meta: { at: new Date().toISOString() } });
-    if (!rs.ok) throw new Error(rs.err); files.sign = rs.id;
+    if (W.sign?.data !== sig) {
+      const rs = await rpc('md_file_put', { p_token: S.token, p_kind: 'sign', p_data: sig, p_meta: { at: new Date().toISOString() } });
+      if (!rs.ok) throw new Error(rs.err); W.sign = { data: sig, id: rs.id };
+    }
+    files.sign = W.sign.id;
     const g = W.shots.selfie.meta;
     const r = await rpc('md_apply', { p_token: S.token, p_amount: W.amt, p_tenor: W.n, p_unit: W.u, p_files: files, p_geo: { lat: g.lat, lng: g.lng, acc: g.acc, addr: g.addr, at: g.at }, p_agreement: agreementText() });
-    if (!r.ok) throw new Error(r.err);
+    if (!r.ok) {
+      // jawaban pertama hilang di jaringan lalu dikirim ulang: pengajuan sebenarnya sudah masuk
+      if (/Masih ada pinjaman/.test(r.err)) { await refresh(true); if (openLoan()?.status === 'pending') { S.tab = 'home'; return appliedModal(); } }
+      throw new Error(r.err);
+    }
     S.tab = 'home'; await refresh(true); appliedModal();
   } catch (e) { err.textContent = 'Gagal: ' + e.message; btn.disabled = false; btn.textContent = 'Setujui & kirim'; }
 }
@@ -2068,7 +2081,7 @@ document.addEventListener('click', async e => {
     case 'tenor': S.calc.n = +t.dataset.v; segPick(t); updCalc(); break;
     case 'theme': { const o = ['auto', 'light', 'dark'], n = o[(o.indexOf(LS.get('theme') || 'auto') + 1) % 3]; LS.set('theme', n === 'auto' ? null : n); applyTheme(); render(); break; }
     case 'apply': startApply(); break;
-    case 'wnext': W.step++; wizard(); break;
+    case 'wnext': if (t.disabled) break; t.disabled = true; W.step = Math.min(W.step + 1, 2 + DOCS.length); wizard(); break;
     case 'wdrop': delete W.shots[t.dataset.k]; wizard(); break;
     case 'wback': W.agree = $('#agree')?.checked || W.agree; W.step--; wizard(); break;
     case 'wten': W.n = +t.dataset.v; segPick(t); $('#w-lines').innerHTML = instLines(planU(W.amt, W.n, W.u)); break;
@@ -2095,7 +2108,7 @@ document.addEventListener('click', async e => {
     case 'jaminan': jaminanPdf([+id]); break;
     case 'jaminan-all': jaminanPdf(S.d.users.map(u => u.id)); break;
     case 'approve': cairModal(id); break;
-    case 'wbank': $('#bankf')?.requestSubmit(); break;
+    case 'wbank': if (!t.disabled) $('#bankf')?.requestSubmit(); break;
     case 'reject': if (await ask('Tolak pengajuan ini?')) adm('loan_update', { id, status: 'rejected' }, 'Pengajuan ditolak'); break;
     case 'markpaid': adm('loan_update', { id, status: 'paid' }, 'Ditandai lunas'); break;
     case 'loandel': if (await ask('Hapus pinjaman ini beserta dokumen dan pembayarannya? Tidak bisa dibatalkan.')) { await adm('loan_delete', { id }, 'Pinjaman dihapus'); closeModal(); } break;
@@ -2144,7 +2157,9 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('submit', async e => {
   const f = e.target; if (!f.dataset.f) return; e.preventDefault();
-  const fd = Object.fromEntries(new FormData(f)), err = f.querySelector('.err'), btn = f.querySelector('button:not([type=button])');
+  // formulir rekening di wizard tidak punya tombol sendiri: tombol "Simpan & lanjut" ada di luar form
+  const fd = Object.fromEntries(new FormData(f)), err = f.querySelector('.err'), btn = f.querySelector('button:not([type=button])') || (f.dataset.then === 'wiz' ? $('[data-a=wbank]') : null);
+  if (btn?.disabled) return;
   const fail = m => { if (err) err.textContent = m; else toast(m); if (btn) btn.disabled = false; };
   if (btn) btn.disabled = true;
   try {
@@ -2178,7 +2193,7 @@ document.addEventListener('submit', async e => {
         if (!r.ok) return fail(r.err);
         await refresh(true);
         const then = f.dataset.then;
-        if (then === 'wiz') { W.step++; wizard(); } else if (then.startsWith('pay:')) payModal(then.slice(4)); else toast('Rekening disimpan');
+        if (then === 'wiz') { W.step = 2; wizard(); } // bukan ++: kirim ganda tidak boleh melompati langkah KTP else if (then.startsWith('pay:')) payModal(then.slice(4)); else toast('Rekening disimpan');
         break;
       }
       case 'verify': {
