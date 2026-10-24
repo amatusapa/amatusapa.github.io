@@ -528,7 +528,7 @@ function vGate() {
 
 function vRules() {
   return `<div class="card glass"><h2>Ketentuan</h2><ul class="rules">
-  <li>Pinjaman pertama ${rp(BASE)}; naik 25% setelah lunas.</li>
+  <li>Pinjaman pertama ${rp(BASE)}, pinjaman modal naik 25% setelah lunas.</li>
   <li>Bunga ${RATE}% per bulan, tenor 1–3 bulan.</li>
   <li>Pelunasan awal: pokok + bunga bulan berjalan.</li>
   <li>Denda keterlambatan ${pct(LATE)}% per hari dari total hutang berjalan.</li>
@@ -563,7 +563,7 @@ const calcLines = p => `<div class="ln"><span>Bunga per bulan (${RATE}%)</span><
 // menu Simulasi: hanya cicilan per bulan
 const simLines = p => `<div class="ln tot"><span>Cicilan per bulan</span><b>${rp(p.inst)}</b></div>`;
 const lateNote = (p, d) => d ? `Denda ${d} hari: <b>${rp(d * LATE / 100 * p.total)}</b>. Total menjadi ${rp(p.total + d * LATE / 100 * p.total)}.` : `Tepat waktu, tanpa denda.`;
-const nextNote = a => `Setelah lunas, batas berikutnya <b>${rp(nextLimit(a))}</b>.`;
+const nextNote = a => `Setelah lunas, batas pinjaman berikutnya <b>${rp(nextLimit(a))}</b>.`;
 function updCalc() {
   const c = S.calc, p = plan(c.amt, c.n);
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
